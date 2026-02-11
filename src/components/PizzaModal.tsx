@@ -37,20 +37,35 @@ export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalPr
     }
   }, [isOpen, pizza?.id]);
 
-  // Charger les extras depuis Firebase au montage du composant
+  // S'abonner aux extras en temps réel
   useEffect(() => {
-    const loadExtras = async () => {
-      try {
-        const firebaseExtras = await extrasService.getAllExtras();
+    try {
+      const unsubscribe = extrasService.subscribeToActiveExtras((firebaseExtras) => {
         setAvailableExtras(firebaseExtras);
-      } catch (error) {
-        console.warn('Utilisation des extras par défaut:', error);
-        // En cas d'erreur, pas d'extras
-        setAvailableExtras([]);
-      }
-    };
 
-    loadExtras();
+        // Mettre à jour les extras sélectionnés si certains ont été modifiés ou supprimés
+        setSelectedExtras(prevSelected => {
+          if (prevSelected.length === 0) return prevSelected;
+
+          // Garder uniquement les extras qui sont encore disponibles
+          const stillAvailable = prevSelected.filter(selected =>
+            firebaseExtras.some(available => available.id === selected.id)
+          );
+
+          // Si le nombre d'extras a changé ou si on veut s'assurer que les prix sont à jour
+          return stillAvailable.map(selected => {
+            const latestVersion = firebaseExtras.find(available => available.id === selected.id);
+            return latestVersion || selected;
+          });
+        });
+      });
+
+      // Cleanup: se désabonner quand le composant est démonté
+      return () => unsubscribe();
+    } catch (error) {
+      console.warn('Erreur lors de l\'abonnement aux extras:', error);
+      setAvailableExtras([]);
+    }
   }, []);
 
   if (!isOpen) return null;

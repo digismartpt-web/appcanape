@@ -657,6 +657,29 @@ export const extrasService = {
         callback([]);
       }
     );
+  },
+
+  subscribeToAllExtras(callback: (extras: Extra[]) => void) {
+    if (!isFirebaseAvailable()) {
+      callback([]);
+      return () => { };
+    }
+
+    const extrasRef = collection(db!, COLLECTIONS.EXTRAS);
+
+    return onSnapshot(extrasRef,
+      (snapshot) => {
+        const extras = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...(doc.data() as any)
+        } as unknown as Extra));
+        callback(extras.sort((a, b) => a.name.localeCompare(b.name)));
+      },
+      (error) => {
+        console.error('Erreur lors de l\'écoute de tous les extras:', error);
+        callback([]);
+      }
+    );
   }
 };
 

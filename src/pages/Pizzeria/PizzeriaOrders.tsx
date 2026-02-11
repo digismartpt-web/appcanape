@@ -33,6 +33,7 @@ export function PizzeriaOrders() {
   const [showDeliveryTimeModal, setShowDeliveryTimeModal] = useState(false);
   const [editingDeliveryOrder, setEditingDeliveryOrder] = useState<Order | null>(null);
   const [deliveryTime, setDeliveryTime] = useState(settings?.default_delivery_time || 30);
+  const [deliveryDistance, setDeliveryDistance] = useState(5);
   const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState('');
   const [pendingStatusChange, setPendingStatusChange] = useState<{ orderId: string; newStatus: OrderStatus } | null>(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
@@ -108,13 +109,39 @@ export function PizzeriaOrders() {
         return;
       }
 
+      // Auto-ouvrir le modal de temps de préparation pour "em preparação"
+      if (newStatus === 'en_preparation' && order) {
+        setPendingStatusChange({ orderId, newStatus });
+        setEditingOrder(order);
+        setPreparationTime(order.preparation_time || settings?.default_preparation_time || 10);
+        setShowTimeModal(true);
+        return;
+      }
+
       if (newStatus === 'confirmee' && order && order.delivery_type === 'pickup') {
         await ordersService.updateOrderStatus(orderId, newStatus);
         toast.success('Encomenda confirmada');
         return;
       }
 
+
+      // Debug logging pour em_entrega
+      if (newStatus === 'em_entrega') {
+        console.log('🔍 DEBUG em_entrega:', {
+          newStatus,
+          hasOrder: !!order,
+          deliveryType: order?.delivery_type,
+          hasDeliveryAddress: !!order?.delivery_address,
+          deliveryAddress: order?.delivery_address,
+          hasSettings: !!settings,
+          settingsAddress: settings?.address
+        });
+      }
+
       if (newStatus === 'em_entrega' && order && order.delivery_type === 'delivery' && order.delivery_address && settings) {
+        setPendingStatusChange({ orderId, newStatus });
+        setEditingDeliveryOrder(order);
+
         toast.loading('Calculando tempo de entrega...');
 
         try {
@@ -123,24 +150,31 @@ export function PizzeriaOrders() {
             order.delivery_address
           );
 
-          await ordersService.updateOrderDeliveryTime(
-            orderId,
-            estimate.duration,
-            estimate.distance
-          );
-
           toast.dismiss();
-          toast.success(`Tempo de entrega estimado: ${estimate.duration} min`);
+          setDeliveryTime(estimate.duration);
+          setDeliveryDistance(estimate.distance);
+          setShowDeliveryTimeModal(true);
+          console.log('✅ Modal should open with time:', estimate.duration);
         } catch (error) {
           toast.dismiss();
           console.error('Erro ao calcular tempo de entrega:', error);
           const defDeliveryTime = settings?.default_delivery_time || 30;
-          await ordersService.updateOrderDeliveryTime(orderId, defDeliveryTime, 5);
-          toast.success(`Tempo de entrega padrão aplicado: ${defDeliveryTime} min`);
+          setDeliveryTime(defDeliveryTime);
+          setDeliveryDistance(5);
+          setShowDeliveryTimeModal(true);
+          toast.error('Erro ao calcular - usando tempo padrão');
+          console.log('⚠️ Modal should open with default time:', defDeliveryTime);
         }
-      } else {
-        await ordersService.updateOrderStatus(orderId, newStatus);
+        return;
       }
+
+      // Pour tous les autres changements de statut
+      if (newStatus === 'em_entrega' && order && order.delivery_type === 'pickup') {
+        toast.error('Encomendas para recolha não podem ser colocadas em entrega');
+        return;
+      }
+
+      await ordersService.updateOrderStatus(orderId, newStatus);
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error);
     }
@@ -157,7 +191,16 @@ export function PizzeriaOrders() {
 
     try {
       await ordersService.updateOrderPreparationTime(editingOrder.id, preparationTime);
-      toast.success(`Tempo de preparação atualizado (${preparationTime} min)`);
+
+      // Si on a un changement de statut en attente, l'appliquer maintenant
+      if (pendingStatusChange && pendingStatusChange.orderId === editingOrder.id) {
+        await ordersService.updateOrderStatus(pendingStatusChange.orderId, pendingStatusChange.newStatus);
+        toast.success(`Encomenda em preparação - Tempo: ${preparationTime} min`);
+        setPendingStatusChange(null);
+      } else {
+        toast.success(`Tempo de preparação atualizado (${preparationTime} min)`);
+      }
+
       setShowTimeModal(false);
       setEditingOrder(null);
     } catch (error) {
@@ -177,15 +220,29 @@ export function PizzeriaOrders() {
 
     try {
       if (pendingStatusChange && pendingStatusChange.orderId === editingDeliveryOrder.id) {
-        await ordersService.updateEstimatedDeliveryTime(editingDeliveryOrder.id, estimatedDeliveryTime);
-        await ordersService.updateOrderStatus(pendingStatusChange.orderId, pendingStatusChange.newStatus);
-        toast.success(`Encomenda confirmada - Hora prevista: ${estimatedDeliveryTime}`);
+        // Cas 1: Confirmation de livraison (status 'confirmee' -> estimated delivery time)
+        if (pendingStatusChange.newStatus === 'confirmee') {
+          await ordersService.updateEstimatedDeliveryTime(editingDeliveryOrder.id, estimatedDeliveryTime);
+          await ordersService.updateOrderStatus(pendingStatusChange.orderId, pendingStatusChange.newStatus);
+          toast.success(`Encomenda confirmada - Hora prevista: ${estimatedDeliveryTime}`);
+        }
+        // Cas 2: Passage à "em_entrega" -> delivery time
+        else if (pendingStatusChange.newStatus === 'em_entrega') {
+          await ordersService.updateOrderDeliveryTime(
+            editingDeliveryOrder.id,
+            deliveryTime,
+            deliveryDistance
+          );
+          await ordersService.updateOrderStatus(pendingStatusChange.orderId, pendingStatusChange.newStatus);
+          toast.success(`Em entrega - Tempo estimado: ${deliveryTime} min`);
+        }
         setPendingStatusChange(null);
       } else {
+        // Modification manuelle du temps de livraison
         await ordersService.updateOrderDeliveryTime(
           editingDeliveryOrder.id,
           deliveryTime,
-          editingDeliveryOrder.delivery_distance
+          editingDeliveryOrder.delivery_distance || deliveryDistance
         );
         toast.success(`Tempo de entrega atualizado (${deliveryTime} min)`);
       }
@@ -409,7 +466,9 @@ export function PizzeriaOrders() {
                         <option value="confirmee">Confirmada</option>
                         <option value="en_preparation">Em Preparação</option>
                         <option value="prete">Pronta</option>
-                        <option value="em_entrega">Em Entrega</option>
+                        {order.delivery_type !== 'pickup' && (
+                          <option value="em_entrega">Em Entrega</option>
+                        )}
                         <option value="recuperee">Entregue</option>
                         <option value="cancelled">Cancelada</option>
                       </select>
@@ -499,7 +558,9 @@ export function PizzeriaOrders() {
                           <option value="confirmee">Confirmada</option>
                           <option value="en_preparation">Em Preparação</option>
                           <option value="prete">Pronta</option>
-                          <option value="em_entrega">Em Entrega</option>
+                          {order.delivery_type !== 'pickup' && (
+                            <option value="em_entrega">Em Entrega</option>
+                          )}
                           <option value="recuperee">Entregue</option>
                           <option value="cancelled">Cancelada</option>
                         </select>
@@ -937,7 +998,7 @@ export function PizzeriaOrders() {
                 )}
               </p>
               <div className="mb-6">
-                {pendingStatusChange ? (
+                {pendingStatusChange && pendingStatusChange.newStatus === 'confirmee' ? (
                   <>
                     <label htmlFor="estimated-time" className="block text-sm font-medium text-gray-700 mb-2">
                       Hora prevista de entrega:

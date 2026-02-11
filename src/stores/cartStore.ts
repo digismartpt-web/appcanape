@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Pizza, Extra, PromotionRule } from '../types';
-import { promotionsService } from '../services/firebaseService';
+import { promotionsService, extrasService } from '../services/firebaseService';
 
 interface CartItem {
   id: string;
@@ -34,7 +34,9 @@ interface CartStore {
   getItemCount: () => number;
   fetchPromotions: () => Promise<void>;
   initPromotionsListener: () => () => void;
+  initExtrasListener: () => () => void;
   applyPromotions: () => void;
+  syncExtras: (availableExtras: Extra[]) => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -60,6 +62,62 @@ export const useCartStore = create<CartStore>()(
           set({ promotions: promos });
           get().applyPromotions();
         });
+      },
+
+      initExtrasListener: () => {
+        return extrasService.subscribeToActiveExtras((availableExtras: Extra[]) => {
+          get().syncExtras(availableExtras);
+        });
+      },
+
+      syncExtras: (availableExtras) => {
+        const { items } = get();
+        let changed = false;
+
+        const updatedItems = items.map(item => {
+          if (!item.extras || item.extras.length === 0) return item;
+
+          // Filtrer les extras qui ne sont plus disponibles
+          const stillAvailable = item.extras.filter(selected =>
+            availableExtras.some(available => available.id === selected.id)
+          );
+
+          // Mettre à jour les données (prix) des extras restants
+          const updatedExtras = stillAvailable.map(selected => {
+            const latest = availableExtras.find(available => available.id === selected.id);
+            if (latest && (latest.price !== selected.price || latest.name !== selected.name)) {
+              changed = true;
+              return latest;
+            }
+            return selected;
+          });
+
+          if (stillAvailable.length !== item.extras.length) {
+            changed = true;
+          }
+
+          if (changed) {
+            // Recalculer le prix de la ligne si les extras ont changé
+            const basePrice = item.pizza.unique_price && item.pizza.unique_price > 0
+              ? item.pizza.unique_price
+              : item.pizza.prices[item.size];
+            const extrasPrice = updatedExtras.reduce((sum, extra) => sum + extra.price, 0);
+            const unitPrice = basePrice + extrasPrice;
+            
+            return {
+              ...item,
+              extras: updatedExtras,
+              price: unitPrice * item.quantity
+            };
+          }
+
+          return item;
+        });
+
+        if (changed) {
+          set({ items: updatedItems });
+          get().applyPromotions();
+        }
       },
 
       applyPromotions: () => {

@@ -111,28 +111,28 @@ export function PizzeriaMenu() {
     return () => unsubscribe();
   }, []);
 
-  // Charger les extras au démarrage
+  // S'abonner aux extras en temps réel
   useEffect(() => {
-    loadExtras();
-  }, []);
-
-  const loadExtras = async () => {
     setLoadingExtras(true);
-    try {
-      if (InitializationService.isFirebaseAvailable()) {
-        const firebaseExtras = await extrasService.getAllExtrasForAdmin();
-        setExtras(firebaseExtras);
+
+    let unsubscribe = () => { };
+    const setupRealtimeExtras = async () => {
+      const initState = await InitializationService.autoInitialize();
+      if (initState.source === 'firebase' && initState.firebaseAvailable) {
+        unsubscribe = extrasService.subscribeToAllExtras((updatedExtras) => {
+          setExtras(updatedExtras);
+          setLoadingExtras(false);
+        });
       } else {
-        // Extras par défaut en mode mock
         setExtras([]);
+        setLoadingExtras(false);
       }
-    } catch (error) {
-      console.error('Erreur lors du chargement des extras:', error);
-      setExtras([]);
-    } finally {
-      setLoadingExtras(false);
-    }
-  };
+    };
+
+    setupRealtimeExtras();
+
+    return () => unsubscribe();
+  }, []);
 
   const loadPizzas = async () => {
     setLoading(true);
@@ -413,7 +413,7 @@ export function PizzeriaMenu() {
         } else {
           await extrasService.createExtra(markedUpExtraData);
         }
-        await loadExtras();
+        // Pas besoin de recharger, la subscription temps réel le fera
       } else {
         // Mode mock
         if (editingExtra) {
@@ -458,7 +458,7 @@ export function PizzeriaMenu() {
 
       if (InitializationService.isFirebaseAvailable()) {
         await extrasService.updateExtra(extra.id, { active: newActiveState });
-        await loadExtras();
+        // Pas besoin de recharger, la subscription temps réel le fera
       } else {
         setExtras(prev => prev.map(e =>
           e.id === extra.id
@@ -480,7 +480,7 @@ export function PizzeriaMenu() {
     try {
       if (InitializationService.isFirebaseAvailable()) {
         await extrasService.deleteExtra(extra.id);
-        await loadExtras();
+        // Pas besoin de recharger, la subscription temps réel le fera
       } else {
         setExtras(prev => prev.filter(e => e.id !== extra.id));
       }

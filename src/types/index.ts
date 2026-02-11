@@ -47,7 +47,7 @@ export interface Pizza {
 }
 
 export interface Extra {
-  id: number;
+  id: string;
   name: string;
   price: number;
   active?: boolean;

@@ -66,12 +66,17 @@ import { useCartStore } from './stores/cartStore';
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const { initPromotionsListener } = useCartStore();
+  const { initPromotionsListener, initExtrasListener } = useCartStore();
 
   useEffect(() => {
-    const unsubscribe = initPromotionsListener();
-    return () => unsubscribe();
-  }, [initPromotionsListener]);
+    const unsubPromos = initPromotionsListener();
+    const unsubExtras = initExtrasListener();
+    
+    return () => {
+      unsubPromos();
+      unsubExtras();
+    };
+  }, [initPromotionsListener, initExtrasListener]);
 
   return (
     <BrowserRouter>
