@@ -113,16 +113,19 @@ export function PizzariaMenu() {
       unique_price: formData.unique_price !== undefined ? applyMarkup(formData.unique_price) : undefined,
     };
 
-    // Se tiver preço único, não enviamos o objeto prices para evitar conflitos no backend
-    if (!formData.has_unique_price) {
+    // Se tiver preço único, limpamos os preços individuais para evitar conflitos no backend
+    if (formData.has_unique_price) {
+      markedUpFormData.prices = {
+        small: 0,
+        medium: formData.unique_price ? applyMarkup(formData.unique_price) : 0,
+        large: 0
+      };
+    } else {
       markedUpFormData.prices = {
         small: formData.prices.small ? applyMarkup(formData.prices.small) : 0,
         medium: formData.prices.medium ? applyMarkup(formData.prices.medium) : 0,
         large: formData.prices.large ? applyMarkup(formData.prices.large) : 0,
       };
-    } else {
-      // Garantir que limpamos os preços individuais se for preço único
-      markedUpFormData.prices = undefined;
     }
 
     try {

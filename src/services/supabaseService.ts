@@ -53,19 +53,23 @@ export const pizzasService = {
       category: pizzaData.category || '',
       image_url: pizzaData.image_url || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800',
       ingredients: pizzaData.ingredients || [],
-      has_unique_price: pizzaData.has_unique_price || false,
-      price_small: pizzaData.prices?.small || 0,
-      price_medium: pizzaData.prices?.medium || 0,
-      price_large: pizzaData.prices?.large || 0,
       customizable: pizzaData.customizable || false,
       max_custom_ingredients: pizzaData.max_custom_ingredients || 3,
       custom_ingredients: pizzaData.custom_ingredients || [],
       active: true,
     };
 
-    if (pizzaData.has_unique_price && pizzaData.unique_price !== undefined) {
-      // Quando é preço único, mapeamos para price_medium
-      cleanData.price_medium = pizzaData.unique_price;
+    if (pizzaData.has_unique_price) {
+      // Quando é preço único, mapeamos para price_medium e limpamos os outros
+      cleanData.has_unique_price = true;
+      cleanData.price_medium = pizzaData.unique_price || 0;
+      cleanData.price_small = 0;
+      cleanData.price_large = 0;
+    } else {
+      cleanData.has_unique_price = false;
+      cleanData.price_small = pizzaData.prices?.small || 0;
+      cleanData.price_medium = pizzaData.prices?.medium || 0;
+      cleanData.price_large = pizzaData.prices?.large || 0;
     }
 
     const { data, error } = await supabase.from(COLLECTIONS.PIZZAS).insert(cleanData).select('id').single();
@@ -85,15 +89,24 @@ export const pizzasService = {
     if (pizzaData.max_custom_ingredients !== undefined) cleanData.max_custom_ingredients = pizzaData.max_custom_ingredients;
     if (pizzaData.custom_ingredients !== undefined) cleanData.custom_ingredients = pizzaData.custom_ingredients;
 
-    if (pizzaData.prices !== undefined) {
-      cleanData.price_small = pizzaData.prices.small || 0;
-      cleanData.price_medium = pizzaData.prices.medium || 0;
-      cleanData.price_large = pizzaData.prices.large || 0;
+    if (pizzaData.has_unique_price !== undefined) {
+      cleanData.has_unique_price = pizzaData.has_unique_price;
     }
 
-    // SEMPRE processar unique_price DEPOIS de prices para garantir que ele ganhe
-    if (pizzaData.has_unique_price && pizzaData.unique_price !== undefined) {
-      cleanData.price_medium = pizzaData.unique_price;
+    if (cleanData.has_unique_price === true) {
+      // Forçar limpeza dos outros tamanhos se estamos em modo preço único
+      cleanData.price_small = 0;
+      cleanData.price_large = 0;
+      if (pizzaData.unique_price !== undefined) {
+        cleanData.price_medium = pizzaData.unique_price;
+      }
+    } else if (cleanData.has_unique_price === false || (cleanData.has_unique_price === undefined && pizzaData.prices !== undefined)) {
+      // Estamos em modo preços por tamanho ou atualizando os preços
+      if (pizzaData.prices !== undefined) {
+        cleanData.price_small = pizzaData.prices.small || 0;
+        cleanData.price_medium = pizzaData.prices.medium || 0;
+        cleanData.price_large = pizzaData.prices.large || 0;
+      }
     }
 
     const { error } = await supabase.from(COLLECTIONS.PIZZAS).update(cleanData).eq('id', pizzaId);
