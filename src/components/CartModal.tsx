@@ -514,7 +514,12 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
+              {localDeliveryType === 'delivery' && (
+                <p className="text-center text-sm font-bold text-accent-700 bg-accent-50 p-2 rounded-lg border border-accent-200">
+                  ⚠️ O horário de entrega deve ser confirmado na aplicação.
+                </p>
+              )}
               <button
                 onClick={handleCheckout}
                 disabled={!canOrder || isSubmitting || items.length === 0 || (localDeliveryType === 'delivery' && (getTotal() < (settings?.min_delivery_amount || 10) || !!distanceError))}
@@ -535,9 +540,6 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                   'Pagar Online'
                 )}
               </button>
-              <p className="text-center text-xs text-primary-600 font-medium">
-                Nota: O horário será confirmado por telefone pela pizzaria.
-              </p>
             </div>
           </div>
         )}

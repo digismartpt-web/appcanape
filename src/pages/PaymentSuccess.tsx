@@ -64,11 +64,11 @@ export const PaymentSuccess: React.FC = () => {
 
         <div className="bg-red-50 border-2 border-red-500 rounded-xl p-6 mb-8 text-center animate-pulse">
           <p className="text-red-700 font-extrabold text-xl mb-2 flex items-center justify-center gap-2">
-            ⚠️ AVISO MUITO IMPORTANTE ⚠️
+            ⚠️ AVISO IMPORTANTE ⚠️
           </p>
           <p className="text-red-900 text-lg">
-            Terá de <strong>atender o telemóvel</strong> em breve. <br />
-            A pizzaria irá ligar-lhe para <strong>confirmar o horário exato</strong> da sua encomenda.
+            Terá de <strong>confirmar o horário</strong> da sua entrega <strong>na aplicação</strong> assim que a pizzaria propor uma hora. <br />
+            Fique atento às notificações na página "As Minhas Encomendas".
           </p>
         </div>
 

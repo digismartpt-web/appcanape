@@ -257,16 +257,17 @@ export default function MesCommandes() {
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Aviso de Confirmação por Telefone (Persistent Alert) */}
-        <div className="bg-red-50 border-2 border-red-500 rounded-xl p-6 mb-8 text-center animate-pulse shadow-lg">
-          <p className="text-red-700 font-extrabold text-lg sm:text-xl mb-2 flex items-center justify-center gap-2">
-            ⚠️ AVISO DE CONFIRMAÇÃO POR TELEFONE
-          </p>
-          <p className="text-red-900 font-bold text-sm sm:text-lg">
-            Por favor, mantenha o seu <strong>telemóvel por perto</strong>. <br />
-            A pizzaria irá ligar-lhe dentro de minutos para <strong>confirmar o seu horário</strong>.
-          </p>
-        </div>
+        {/* Banner dinâmico: Só aparece se houver entrega pendente de confirmação */}
+        {orders.some(o => o.delivery_type === 'delivery' && o.status === 'en_attente' && !o.estimated_delivery_time_confirmed) && (
+          <div className="bg-red-50 border-2 border-red-500 rounded-xl p-6 mb-8 text-center animate-pulse shadow-lg">
+            <p className="text-red-700 font-extrabold text-lg sm:text-xl mb-2 flex items-center justify-center gap-2">
+              ⚠️ CONFIRMAÇÃO DE HORÁRIO NECESSÁRIA
+            </p>
+            <p className="text-red-900 font-bold text-sm sm:text-lg">
+              Tem uma encomenda para entrega. Por favor, fique atento a esta página para <strong>confirmar o horário</strong> na aplicação assim que a pizzaria propor uma hora.
+            </p>
+          </div>
+        )}
 
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">As Minhas Encomendas</h1>
