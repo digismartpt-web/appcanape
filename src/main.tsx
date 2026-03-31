@@ -3,28 +3,35 @@ import { createRoot } from 'react-dom/client';
 import { useAuth } from './hooks/useAuth';
 import App from './App.tsx';
 import './index.css';
-
 import { initGoogleMaps } from './lib/googleMaps';
 
-// Safe initialization
-try {
-  // Initialize auth state
-  const { initializeAuth } = useAuth.getState();
-  initializeAuth();
-  
-  // Initialize Google Maps
-  initGoogleMaps();
-} catch (error) {
-  console.error('❌ Error during initialization:', error);
-}
+// On enveloppe le tout pour éviter de bloquer le rendu visuel
+const startApp = async () => {
+  const rootElement = document.getElementById('root');
+  if (!rootElement) return;
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+  const root = createRoot(rootElement);
 
-// Register Service Worker for 0ms image loading
+  // Rendu initial immédiat (même si vide/chargement)
+  root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+
+  // Initialisation différée pour ne pas faire planter l'affichage
+  try {
+    const { initializeAuth } = useAuth.getState();
+    await initializeAuth();
+    initGoogleMaps();
+  } catch (error) {
+    console.error('📊 Erreur d\'initialisation silencieuse :', error);
+  }
+};
+
+startApp();
+
+// Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(err => {
