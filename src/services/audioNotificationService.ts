@@ -101,6 +101,28 @@ class AudioNotificationService {
     }
   }
 
+  async playClientNotification() {
+    if (!this.isUnlocked) {
+      await this.unlockAudio();
+      if (!this.isUnlocked) return;
+    }
+
+    try {
+      this.initAudioContext();
+      if (!this.audioContext) return;
+
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+
+      // Som mais curto e agudo para o cliente (Ding-Ding!)
+      await this.playBeep(1000, 0.3, 0);
+      await this.playBeep(1300, 0.5, 0.3);
+    } catch (error) {
+      console.error('❌ Erro ao reproduzir som do cliente:', error);
+    }
+  }
+
   setEnabled(enabled: boolean) {
     this.isEnabled = enabled;
     localStorage.setItem('pizzaria_audio_enabled', enabled.toString());

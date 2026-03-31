@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Clock, Package, CheckCircle, XCircle, Eye, Phone, Mail, MapPin, Truck, Store, CreditCard, Loader2 } from 'lucide-react';
+import { Clock, Package, CheckCircle, XCircle, Eye, Phone, Mail, MapPin, Truck, Store, CreditCard, Loader2, BellRing } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 import { ordersService } from '../services/supabaseService';
 import { checkOpeningHours } from '../services/openingHoursService';
+import { audioNotificationService } from '../services/audioNotificationService';
 import type { Order } from '../types';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -59,6 +60,22 @@ export default function MesCommandes() {
   const [confirmingOrder, setConfirmingOrder] = useState<Order | null>(null);
   const [requestedLaterTime, setRequestedLaterTime] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState<string | null>(null);
+  const [lastNotifiedOrderId, setLastNotifiedOrderId] = useState<string | null>(null);
+
+  // Déverrouiller l'audio au premier clic
+  useEffect(() => {
+    const unlock = () => {
+      audioNotificationService.unlockAudio();
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+    window.addEventListener('click', unlock);
+    window.addEventListener('touchstart', unlock);
+    return () => {
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -67,8 +84,10 @@ export default function MesCommandes() {
       setOrders(userOrders);
       setLoading(false);
 
+      // Chercher une commande qui nécessite confirmation de l'horaire
+      // On élargit à "en_preparation" au cas où la pizzaria a déjà commencé
       const needsConfirmation = userOrders.find(
-        order => order.status === 'confirmee' &&
+        order => (order.status === 'confirmee' || order.status === 'en_preparation') &&
           order.delivery_type === 'delivery' &&
           order.estimated_delivery_time &&
           order.estimated_delivery_time.trim() !== '' &&
@@ -77,6 +96,15 @@ export default function MesCommandes() {
       );
 
       if (needsConfirmation) {
+        // Alerte sonore et vibration si c'est une nouvelle notification
+        if (lastNotifiedOrderId !== needsConfirmation.id) {
+          audioNotificationService.playClientNotification();
+          if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]);
+          }
+          setLastNotifiedOrderId(needsConfirmation.id);
+        }
+
         if (!confirmingOrder || confirmingOrder.id !== needsConfirmation.id) {
           setConfirmingOrder(needsConfirmation);
           const [hours, minutes] = needsConfirmation.estimated_delivery_time!.split(':').map(Number);
@@ -85,9 +113,10 @@ export default function MesCommandes() {
           setRequestedLaterTime(suggestedTime.toTimeString().slice(0, 5));
           setShowTimeConfirmModal(true);
         }
-      } else if (showTimeConfirmModal) {
-        setShowTimeConfirmModal(false);
-        setConfirmingOrder(null);
+      } else {
+        if (showTimeConfirmModal) setShowTimeConfirmModal(false);
+        if (confirmingOrder) setConfirmingOrder(null);
+        setLastNotifiedOrderId(null);
       }
     });
 
@@ -234,6 +263,33 @@ export default function MesCommandes() {
             Acompanhe o estado das suas encomendas em tempo real
           </p>
         </div>
+
+        {/* Bannière de notification persistante si une confirmation est attendue */}
+        {confirmingOrder && (
+          <div className="mb-6 bg-accent-600 shadow-lg rounded-lg overflow-hidden animate-bounce-subtle">
+            <div className="p-4 flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="bg-white p-2 rounded-full mr-3">
+                  <BellRing className="w-5 h-5 text-accent-600 animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm sm:text-base">
+                    Confirme o seu horário de entrega!
+                  </p>
+                  <p className="text-accent-100 text-xs sm:text-sm">
+                    A pizzaria propôs as {confirmingOrder.estimated_delivery_time}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTimeConfirmModal(true)}
+                className="bg-white text-accent-600 px-4 py-2 rounded-md font-bold text-sm hover:bg-accent-50 transition-colors"
+              >
+                Ver Agora
+              </button>
+            </div>
+          </div>
+        )}
 
         {orders.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
