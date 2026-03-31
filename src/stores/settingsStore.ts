@@ -80,10 +80,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   initSettings: () => {
-    if (get().initialized) return () => {};
-
     console.log('🔄 [SettingsStore] Inicializando ouvintes em tempo real...');
-
+    set({ initialized: true });
     get().fetchSettings();
 
     const channelId = 'public:settings';
@@ -112,12 +110,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     const pollingInterval = setInterval(() => {
       get().fetchSettings();
-    }, 60000);
+    }, 15000); // 15s polling for open/closed status fallback
 
     return () => {
       console.log('🔌 [SettingsStore] Desconectando Realtime...');
       supabase.removeChannel(channel);
       clearInterval(pollingInterval);
+      set({ initialized: false });
     };
   },
 

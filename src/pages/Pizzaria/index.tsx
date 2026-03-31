@@ -14,6 +14,16 @@ import toast from 'react-hot-toast';
 export function Pizzaria() {
   const previousOrderIdsRef = useRef<Set<string>>(new Set());
 
+  // Déverrouiller l'audio au premier clic de l'utilisateur (obligation navigateur)
+  useEffect(() => {
+    const unlock = () => {
+      audioNotificationService.unlockAudio();
+      document.removeEventListener('click', unlock);
+    };
+    document.addEventListener('click', unlock);
+    return () => document.removeEventListener('click', unlock);
+  }, []);
+
   useEffect(() => {
     // S'abonner aux commandes dès l'arrivée sur l'interface pizzaria
     const unsubscribe = ordersService.subscribeToAllOrders((newOrders) => {

@@ -90,7 +90,7 @@ function App() {
     // Only subscribe to all orders if user is admin or pizzaria
     let unsubOrders = () => {};
     if (user?.role === 'admin' || user?.role === 'pizzeria') {
-      unsubOrders = initAdminOrdersListener(true); // Force re-init on role change
+      unsubOrders = initAdminOrdersListener(); // Auto re-init on role change via cleanup logic
     }
     
     return () => {

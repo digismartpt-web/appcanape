@@ -11,8 +11,9 @@ interface OrderState {
   fetchAllOrders: () => Promise<void>;
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
-  initAdminOrdersListener: (force?: boolean) => () => void;
+  initAdminOrdersListener: () => () => void;
   subscribeToUserOrders: (userId: string) => () => void;
+  subscribeToAllOrders: () => () => void;
 }
 
 
@@ -79,11 +80,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  initAdminOrdersListener: (force = false) => {
-    if (get().initialized && !force) return () => {};
-    
-    console.log(`🔄 [OrderStore] ${force ? 'Reiniciando' : 'Inicializando'} ouvinte global de encomendas...`);
-    
+  initAdminOrdersListener: () => {
+    set({ initialized: true });
     if (!get().initialized) set({ loading: true });
 
     // 1. Ouvinte Realtime
@@ -97,18 +95,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       console.log('⏳ [OrderStore] Polling de segurança...');
       try {
         const orders = await ordersService.getAllOrders();
-        // Só atualizamos se o estado não tiver sido inicializado pelo Realtime recentemente
-        // ou se quisermos garantir consistência total
         set({ orders, loading: false, initialized: true });
       } catch (err) {
         console.warn('⚠️ [OrderStore] Falha no polling:', err);
       }
-    }, 30000);
+    }, 15000); // 15s - fallback pour navigateurs privés où le Realtime WebSocket peut échouer
 
     return () => {
       console.log('🔌 [OrderStore] Parando ouvintes e polling...');
       unsubscribeRealtime();
       clearInterval(pollingInterval);
+      set({ initialized: false });
     };
   },
 
@@ -116,5 +113,27 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     return ordersService.subscribeToUserOrders(userId, (orders) => {
       set({ orders, loading: false, error: null });
     });
+  },
+
+  // Utilisé par Admin/Orders.tsx - subscription indépendante avec fallback polling
+  subscribeToAllOrders: () => {
+    set({ loading: true });
+    const unsubscribeRealtime = ordersService.subscribeToAllOrders((orders) => {
+      set({ orders, loading: false, error: null });
+    });
+
+    const pollingInterval = setInterval(async () => {
+      try {
+        const orders = await ordersService.getAllOrders();
+        set({ orders, loading: false });
+      } catch (err) {
+        console.warn('⚠️ [OrderStore/Admin] Falha no polling:', err);
+      }
+    }, 15000);
+
+    return () => {
+      unsubscribeRealtime();
+      clearInterval(pollingInterval);
+    };
   }
 }));

@@ -36,14 +36,10 @@ export function PizzariaOrders() {
   const [deliveryTime, setDeliveryTime] = useState(settings?.default_delivery_time || 30);
   const [deliveryDistance, setDeliveryDistance] = useState(5);
   const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState('');
-  const [pendingStatusChange, setPendingStatusChange] = useState<{ orderId: string; newStatus: OrderStatus } | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
-  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
-  const [showDeleteOneModal, setShowDeleteOneModal] = useState(false);
-  const [orderToDeleteId, setOrderToDeleteId] = useState<string | null>(null);
-  const [deleteOnePassword, setDeleteOnePassword] = useState('');
-  const [isDeletingOne, setIsDeletingOne] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{ orderId: string; newStatus: OrderStatus } | null>(null);
 
   useEffect(() => {
     const unsubscribe = initAdminOrdersListener();
@@ -299,42 +295,6 @@ export function PizzariaOrders() {
     window.scrollTo(0, 0);
   }, [currentPage]);
 
-  const handleDeleteOneOrder = (orderId: string) => {
-    setOrderToDeleteId(orderId);
-    setDeleteOnePassword('');
-    setShowDeleteOneModal(true);
-  };
-
-  const handleConfirmDeleteOneOrder = async () => {
-    const correctPassword = settings?.delete_password || '';
-
-    if (!correctPassword) {
-      toast.error('Nenhuma senha de eliminação definida no Admin!');
-      return;
-    }
-
-    if (deleteOnePassword !== correctPassword) {
-      toast.error('Senha incorreta!');
-      return;
-    }
-
-    if (!orderToDeleteId) return;
-
-    setIsDeletingOne(true);
-    try {
-      await ordersService.deleteOrder(orderToDeleteId);
-      toast.success('Encomenda eliminada com sucesso!');
-      setShowDeleteOneModal(false);
-      setOrderToDeleteId(null);
-      setDeleteOnePassword('');
-    } catch (error) {
-      console.error('Erro ao eliminar encomenda:', error);
-      toast.error('Erro ao eliminar a encomenda.');
-    } finally {
-      setIsDeletingOne(false);
-    }
-  };
-
   const handleDeleteAllOrders = async () => {
     const correctPassword = settings?.delete_password || '';
 
@@ -524,14 +484,6 @@ export function PizzariaOrders() {
                         </button>
                       )}
                       <button
-                        onClick={() => handleDeleteOneOrder(order.id)}
-                        className="w-full inline-flex items-center justify-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 touch-manipulation"
-                        title="Eliminar esta encomenda"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Eliminar
-                      </button>
-                      <button
                         onClick={() => setSelectedOrder(order)}
                         className="w-full inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 touch-manipulation"
                       >
@@ -632,13 +584,6 @@ export function PizzariaOrders() {
                             {order.delivery_time || settings?.default_delivery_time || 30} min
                           </button>
                         )}
-                        <button
-                          onClick={() => handleDeleteOneOrder(order.id)}
-                          className="inline-flex items-center px-3 py-1 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                          title="Eliminar esta encomenda"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                         <button
                           onClick={() => setSelectedOrder(order)}
                           className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
@@ -968,70 +913,6 @@ export function PizzariaOrders() {
         </div>
       )}
 
-      {/* Modal de suppression d'une seule commande */}
-      {showDeleteOneModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="p-6">
-              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-                <Trash2 className="h-6 w-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
-                Eliminar Encomenda
-              </h3>
-              <div className="bg-red-50 p-4 rounded-lg mb-6">
-                <p className="text-red-800 text-sm">
-                  Esta ação é irreversível. Introduza a senha de administração para confirmar.
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <label htmlFor="delete-one-password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Senha de Confirmação
-                </label>
-                <input
-                  id="delete-one-password"
-                  type="password"
-                  value={deleteOnePassword}
-                  onChange={(e) => setDeleteOnePassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmDeleteOneOrder()}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
-                  placeholder="Introduza a senha..."
-                  autoFocus
-                />
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setShowDeleteOneModal(false);
-                    setOrderToDeleteId(null);
-                    setDeleteOnePassword('');
-                  }}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleConfirmDeleteOneOrder}
-                  disabled={isDeletingOne || !deleteOnePassword}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-                >
-                  {isDeletingOne ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      A eliminar...
-                    </>
-                  ) : (
-                    'Confirmar Eliminação'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Modal de modificação do tempo de preparação */}
       {showTimeModal && editingOrder && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -1269,6 +1150,62 @@ export function PizzariaOrders() {
               >
                 Confirmar Anulação
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal de justification d'annulation */}
+      {showCancellationModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Justificativa de Cancelamento
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Por favor, indique o motivo do cancelamento para informar o cliente.
+              </p>
+              <textarea
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-accent-500 focus:border-accent-500 mb-4"
+                rows={4}
+                placeholder="Ex: Ingredientes esgotados, fora da zona de entrega, etc."
+              />
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowCancellationModal(false);
+                    setOrderToCancel(null);
+                    setCancellationReason('');
+                  }}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                >
+                  Voltar
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!cancellationReason.trim()) {
+                      toast.error('Por favor, indique um motivo');
+                      return;
+                    }
+                    if (orderToCancel) {
+                      try {
+                        await ordersService.updateOrderStatus(orderToCancel, 'cancelled', cancellationReason);
+                        toast.success('Encomenda cancelada');
+                        setShowCancellationModal(false);
+                        setOrderToCancel(null);
+                        setCancellationReason('');
+                      } catch (error) {
+                        toast.error('Erro ao cancelar encomenda');
+                      }
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  Confirmar Cancelamento
+                </button>
+              </div>
             </div>
           </div>
         </div>
