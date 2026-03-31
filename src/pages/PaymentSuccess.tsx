@@ -23,15 +23,14 @@ export const PaymentSuccess: React.FC = () => {
       try {
         const success = await ordersService.confirmPayment(orderId);
         setStatus('success');
-        if (success) {
-          toast.success('Pagamento confirmado!');
-        }
+        console.log('✅ Pagamento confirmado no Supabase');
         
-        setTimeout(() => navigate('/mes-commandes'), 4000);
+        // Aumentado para 10 segundos para o cliente ver o aviso importante
+        setTimeout(() => navigate('/mes-commandes'), 10000);
       } catch (error) {
         console.error('Erro ao confirmar:', error);
         setStatus('success');
-        setTimeout(() => navigate('/mes-commandes'), 5000);
+        setTimeout(() => navigate('/mes-commandes'), 10000);
       }
     };
 
@@ -63,12 +62,13 @@ export const PaymentSuccess: React.FC = () => {
           Obrigado pela sua encomenda. A pizzaria foi notificada e vai começar a preparar o seu pedido em breve.
         </p>
 
-        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-8 text-left">
-          <p className="text-orange-700 font-bold mb-1 flex items-center gap-2">
-            ⚠️ ATENÇÃO / IMPORTANTE:
+        <div className="bg-red-50 border-2 border-red-500 rounded-xl p-6 mb-8 text-center animate-pulse">
+          <p className="text-red-700 font-extrabold text-xl mb-2 flex items-center justify-center gap-2">
+            ⚠️ AVISO MUITO IMPORTANTE ⚠️
           </p>
-          <p className="text-orange-800">
-            Fique atento ao seu <strong>telemóvel</strong>. A pizzaria irá entrar em contacto consigo em breve para <strong>confirmar o horário exato</strong> de levantamento ou entrega da sua encomenda.
+          <p className="text-red-900 text-lg">
+            Terá de <strong>atender o telemóvel</strong> em breve. <br />
+            A pizzaria irá ligar-lhe para <strong>confirmar o horário exato</strong> da sua encomenda.
           </p>
         </div>
 
