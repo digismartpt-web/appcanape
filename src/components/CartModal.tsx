@@ -55,7 +55,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
 
   // PRÉ-CALCUL : On lance le calcul dès que l'adresse est saisie pour remplir le cache
   useEffect(() => {
-    if (localDeliveryType === 'delivery' && localDeliveryAddress.length > 10 && settings.address) {
+    if (localDeliveryType === 'delivery' && localDeliveryAddress.trim().length > 5 && settings.address) {
       // Appel silencieux pour remplir le cache
       calculateDeliveryTime(settings.address, localDeliveryAddress).catch(() => {
         // Erreur ignorée en arrière-plan
