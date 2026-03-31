@@ -126,9 +126,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
       const { error } = await supabase
         .from('settings')
-        .upsert({ id: SETTINGS_ROW_ID, ...newSettings });
+        .update(newSettings)
+        .eq('id', SETTINGS_ROW_ID);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [SettingsStore] Erro ao atualizar Supabase:', error);
+        throw error;
+      }
       return true;
     } catch (error) {
       console.error('❌ [SettingsStore] Erro ao gravar:', error);
