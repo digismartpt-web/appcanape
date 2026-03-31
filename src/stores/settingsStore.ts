@@ -108,14 +108,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         console.log(`📡 [SettingsStore] Status da subscrição ${channelId}:`, status);
       });
 
-    const pollingInterval = setInterval(() => {
-      get().fetchSettings();
-    }, 15000); // 15s polling for open/closed status fallback
-
     return () => {
       console.log('🔌 [SettingsStore] Desconectando Realtime...');
       supabase.removeChannel(channel);
-      clearInterval(pollingInterval);
       set({ initialized: false });
     };
   },

@@ -245,14 +245,7 @@ export function PizzariaSettings() {
             </div>
             <button
               type="button"
-              onClick={async () => {
-                if (!settings) return;
-                const newStatus = !settings.is_open;
-                // Atualizar localmente
-                updateField('is_open', newStatus);
-                // Persistir imediatamente no Supabase
-                await updateSettings({ is_open: newStatus });
-              }}
+              onClick={() => setSettings(prev => prev ? ({ ...prev, is_open: !prev.is_open }) : null)}
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${settings.is_open ? 'bg-green-500' : 'bg-red-500'
                 }`}
               title={`Alternar para ${settings.is_open ? 'fechado' : 'aberto'}`}
