@@ -1,78 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { Gift, Plus, Trash2, Edit2, Check, X, Info } from 'lucide-react';
-import { promotionsService, pizzasService, categoriesService } from '../services/firebaseService';
+import React, { useState } from 'react';
+import { Gift, Plus, Trash2, Edit2, X, Info } from 'lucide-react';
+import { promotionsService } from '../services/supabaseService';
 import { useAuth } from '../hooks/useAuth';
-import { auth, db } from '../lib/firebase';
-import type { PromotionRule, Pizza } from '../types';
+import { usePromotionsStore } from '../stores/promotionsStore';
+import { usePizzasStore } from '../stores/pizzasStore';
+import type { PromotionRule } from '../types';
 
 export const PromotionsManager: React.FC = () => {
     const { user: authUser } = useAuth();
-    const [promotions, setPromotions] = useState<PromotionRule[]>([]);
-    const [pizzas, setPizzas] = useState<Pizza[]>([]);
-    const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { allPromotions: promotions, loading } = usePromotionsStore();
+    const { allPizzas: pizzas, categories } = usePizzasStore();
+    
     const [isEditing, setIsEditing] = useState(false);
     const [currentPromo, setCurrentPromo] = useState<Partial<PromotionRule> | null>(null);
-    const [debugInfo, setDebugInfo] = useState<{ projectId: string; uid: string } | null>(null);
-
-    useEffect(() => {
-        const projId = (db as any)?._databaseId?.projectId || 'smartentregas-7796d';
-        const uid = auth?.currentUser?.uid || 'Desconectado';
-        setDebugInfo({ projectId: projId, uid });
-
-        const unsubPromos = promotionsService.subscribeToAllPromotions((promos) => {
-            setPromotions(promos || []);
-            setLoading(false);
-        });
-
-        pizzasService.getAllPizzas().then(setPizzas).catch(console.error);
-
-        const unsubCats = categoriesService.subscribeToCategories((cats) => {
-            setCategories(cats.map(c => ({ id: c.id, name: c.name })));
-        });
-
-        return () => {
-            unsubPromos();
-            unsubCats();
-        };
-    }, []);
-
-    const cleanDataForFirestore = (data: any): any => {
-        if (data === null || data === undefined) return null;
-        if (typeof data !== 'object') return data;
-        if (Array.isArray(data)) return data.map(cleanDataForFirestore);
-        if (data instanceof Date) return data;
-
-        const cleaned: any = {};
-        Object.keys(data).forEach(key => {
-            if (['created_at', 'updated_at', 'id'].includes(key)) return;
-            const value = data[key];
-            if (value === undefined) return;
-            cleaned[key] = cleanDataForFirestore(value);
-        });
-        return cleaned;
-    };
+    // Removidos useEffects de subscrição local (geridos globalmente)
 
     const handleSave = async () => {
         if (!currentPromo?.name) return alert('Por favor, indique um nome para a promoção.');
 
         try {
-            const dataToSave = cleanDataForFirestore(currentPromo);
-            console.log('--- TESTE DE GRAVAÇÃO ---');
-            console.log('Projeto:', debugInfo?.projectId);
-            console.log('Dados:', dataToSave);
+            console.log('--- SAVING PROMOTION ---');
+            console.log('Dados:', currentPromo);
 
             if (currentPromo.id) {
-                await promotionsService.updatePromotion(currentPromo.id, dataToSave);
+                await promotionsService.updatePromotion(currentPromo.id, currentPromo);
             } else {
-                await promotionsService.addPromotion(dataToSave as Omit<PromotionRule, 'id'>);
+                await promotionsService.addPromotion(currentPromo as Omit<PromotionRule, 'id'>);
             }
             setIsEditing(false);
             setCurrentPromo(null);
+            // Fallback refresh
+            promotionsService.getAllPromotions().then(promos => usePromotionsStore.setState({ allPromotions: promos }));
             alert('Promoção salva com sucesso! 🎉');
         } catch (error: any) {
             console.error('ERRO DETALHADO:', error);
-            alert(`🛑 FALHA NO SALVAMENTO\n\nErro: ${error.code || 'Desconhecido'}\n\nVerifique se as novas regras foram publicadas no projeto: ${debugInfo?.projectId}`);
+            alert(`🛑 Erro ao guardar a promoção: ${error.message || error.code || 'Desconhecido'}. Verifique as políticas RLS do Supabase.`);
         }
     };
 
@@ -81,7 +43,7 @@ export const PromotionsManager: React.FC = () => {
         setIsEditing(true);
     };
 
-    if (loading) return <div className="p-8 text-center animate-pulse">Carregando dados da pizzeria...</div>;
+    if (loading) return <div className="p-8 text-center animate-pulse">Carregando dados da pizzaria...</div>;
 
     const hasPermission = authUser?.role === 'admin' || authUser?.role === 'pizzeria';
 
@@ -136,6 +98,7 @@ export const PromotionsManager: React.FC = () => {
                                     onChange={e => setCurrentPromo({ ...currentPromo, name: e.target.value })}
                                     className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-accent-500 outline-none"
                                     placeholder="Ex: Compre 3 Ganhe 1"
+                                    title="Nome da promoção"
                                 />
                             </div>
                             <div>
@@ -146,6 +109,7 @@ export const PromotionsManager: React.FC = () => {
                                     onChange={e => setCurrentPromo({ ...currentPromo, description: e.target.value })}
                                     className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-accent-500 outline-none"
                                     placeholder="Ex: Válido para todas as pizzas médias"
+                                    title="Descrição da promoção"
                                 />
                             </div>
                         </div>
@@ -166,6 +130,7 @@ export const PromotionsManager: React.FC = () => {
                                             buyCondition: { ...currentPromo.buyCondition!, count: parseInt(e.target.value) || 0 }
                                         })}
                                         className="w-16 px-2 py-1 border rounded focus:ring-1 focus:ring-primary-500 outline-none"
+                                        title="Quantidade necessária"
                                     />
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -177,6 +142,7 @@ export const PromotionsManager: React.FC = () => {
                                             buyCondition: { ...currentPromo.buyCondition!, category: e.target.value }
                                         })}
                                         className="px-2 py-1 border rounded min-w-[140px]"
+                                        title="Categoria da promoção"
                                     >
                                         <option value="">Todas as Categorias</option>
                                         {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -191,6 +157,7 @@ export const PromotionsManager: React.FC = () => {
                                             buyCondition: { ...currentPromo.buyCondition!, size: (e.target.value as any) || undefined }
                                         })}
                                         className="px-2 py-1 border rounded"
+                                        title="Tamanho necessário"
                                     >
                                         <option value="">Qualquer Tamanho</option>
                                         <option value="small">Pequena</option>
@@ -310,14 +277,14 @@ export const PromotionsManager: React.FC = () => {
                                     <p className="text-sm text-gray-500 mb-2">{promo.description}</p>
                                     <div className="flex flex-wrap gap-2">
                                         <span className="text-[10px] bg-primary-50 text-primary-700 px-2 py-1 rounded-md border border-primary-100 uppercase font-black">
-                                            COMPRA: {promo.buyCondition.count}x {promo.buyCondition.category || 'Items'} {promo.buyCondition.size ? `(${promo.buyCondition.size})` : ''}
+                                            COMPRA: {promo.buyCondition?.count || 0}x {promo.buyCondition?.category || 'Items'} {promo.buyCondition?.size ? `(${promo.buyCondition.size})` : ''}
                                         </span>
                                         <span className="text-[10px] bg-accent-50 text-accent-800 px-2 py-1 rounded-md border border-accent-100 uppercase font-black">
-                                            GANHA: {promo.reward.count}x {
-                                                promo.reward.productId
-                                                    ? pizzas.find(p => p.id === promo.reward.productId)?.name
-                                                    : (promo.reward.category || 'Grátis')
-                                            } {promo.reward.size ? `(${promo.reward.size})` : ''}
+                                            GANHA: {promo.reward?.count || 0}x {
+                                                promo.reward?.productId
+                                                    ? (pizzas || []).find(p => p.id === promo.reward?.productId)?.name
+                                                    : (promo.reward?.category || 'Grátis')
+                                            } {promo.reward?.size ? `(${promo.reward.size})` : ''}
                                         </span>
                                     </div>
                                 </div>
@@ -354,7 +321,13 @@ export const PromotionsManager: React.FC = () => {
                                     <Edit2 className="h-5 w-5" />
                                 </button>
                                 <button
-                                    onClick={() => { if (window.confirm('Deseja eliminar permanentemente esta promoção?')) promotionsService.deletePromotion(promo.id); }}
+                                    onClick={async () => { 
+                                        if (window.confirm('Deseja eliminar permanentemente esta promoção?')) {
+                                            await promotionsService.deletePromotion(promo.id);
+                                            // Fallback refresh
+                                            promotionsService.getAllPromotions().then(promos => usePromotionsStore.setState({ allPromotions: promos }));
+                                        }
+                                    }}
                                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
                                     title="Eliminar"
                                 >

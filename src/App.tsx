@@ -23,14 +23,15 @@ import { Profile } from './pages/Profile';
 import MesCommandes from './pages/MesCommandes';
 import { Privacy } from './pages/Privacy';
 import { Admin } from './pages/Admin';
-import { Pizzeria } from './pages/Pizzeria';
+import { Pizzaria } from './pages/Pizzaria';
+import { PaymentSuccess } from './pages/PaymentSuccess';
 
 function MainContent() {
   const location = useLocation();
-  const isAdminOrPizzeria = location.pathname.startsWith('/admin') || location.pathname.startsWith('/pizzeria');
+  const isAdminOrPizzaria = location.pathname.startsWith('/admin') || location.pathname.startsWith('/pizzaria');
 
   return (
-    <main className={`flex-1 ${isAdminOrPizzeria ? 'w-full' : 'container mx-auto px-4 py-8'}`}>
+    <main className={`flex-1 ${isAdminOrPizzaria ? 'w-full' : 'container mx-auto px-4 py-8'}`}>
       <Routes>
         <Route path="/" element={<Menu />} />
         <Route path="/contact" element={<Home />} />
@@ -52,31 +53,55 @@ function MainContent() {
             <Admin />
           </ProtectedRoute>
         } />
-        <Route path="/pizzeria/*" element={
+        <Route path="/pizzaria/*" element={
           <ProtectedRoute role="pizzeria">
-            <Pizzeria />
+            <Pizzaria />
           </ProtectedRoute>
         } />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
       </Routes>
     </main>
   );
 }
 
+import { useAuth } from './hooks/useAuth';
 import { useCartStore } from './stores/cartStore';
+import { useSettingsStore } from './stores/settingsStore';
+import { usePizzasStore } from './stores/pizzasStore';
+import { usePromotionsStore } from './stores/promotionsStore';
+import { useOrderStore } from './stores/orderStore';
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const { user } = useAuth();
   const { initPromotionsListener, initExtrasListener } = useCartStore();
+  const { initSettings } = useSettingsStore();
+  const { initPizzasStore } = usePizzasStore();
+  const { initPromotionsStore } = usePromotionsStore();
+  const { initAdminOrdersListener } = useOrderStore();
 
   useEffect(() => {
-    const unsubPromos = initPromotionsListener();
+    const unsubPromosLegacy = initPromotionsListener(); // Keep for cart logic synchronization if needed
     const unsubExtras = initExtrasListener();
+    const unsubSettings = initSettings();
+    const unsubPizzas = initPizzasStore();
+    const unsubPromosGlobal = initPromotionsStore();
+    
+    // Only subscribe to all orders if user is admin or pizzaria
+    let unsubOrders = () => {};
+    if (user?.role === 'admin' || user?.role === 'pizzeria') {
+      unsubOrders = initAdminOrdersListener(true); // Force re-init on role change
+    }
     
     return () => {
-      unsubPromos();
+      unsubPromosLegacy();
       unsubExtras();
+      unsubSettings();
+      unsubPizzas();
+      unsubPromosGlobal();
+      unsubOrders();
     };
-  }, [initPromotionsListener, initExtrasListener]);
+  }, [initPromotionsListener, initExtrasListener, initSettings, initPizzasStore, initPromotionsStore, initAdminOrdersListener, user?.role]);
 
   return (
     <BrowserRouter>

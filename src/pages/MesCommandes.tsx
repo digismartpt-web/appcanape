@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Clock, Package, CheckCircle, XCircle, Eye, Phone, Mail, MapPin, Truck, Store } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { usePizzeriaSettings } from '../hooks/usePizzeriaSettings';
-import { ordersService } from '../services/firebaseService';
+import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
+import { ordersService } from '../services/supabaseService';
 import type { Order } from '../types';
 
 const statusConfig = {
@@ -45,7 +45,7 @@ const statusConfig = {
 
 export default function MesCommandes() {
   const { user } = useAuth();
-  const { settings } = usePizzeriaSettings();
+  const { settings } = usePizzariaSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -149,7 +149,7 @@ export default function MesCommandes() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">A carregar os seus pedidos...</p>
+          <p className="text-gray-600">A carregar as suas encomendas...</p>
         </div>
       </div>
     );
@@ -159,9 +159,9 @@ export default function MesCommandes() {
     <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Os Meus Pedidos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">As Minhas Encomendas</h1>
           <p className="mt-2 text-sm sm:text-base text-gray-600">
-            Acompanhe o estado dos seus pedidos em tempo real
+            Acompanhe o estado das suas encomendas em tempo real
           </p>
         </div>
 
@@ -169,10 +169,10 @@ export default function MesCommandes() {
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
             <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Nenhum pedido
+              Nenhuma encomenda
             </h3>
             <p className="text-gray-600">
-              Ainda não fez nenhum pedido.
+              Ainda não fez nenhuma encomenda.
             </p>
           </div>
         ) : (
@@ -191,7 +191,7 @@ export default function MesCommandes() {
                         </div>
                         <div>
                           <h3 className="text-lg font-medium text-gray-900">
-                            Pedido #{order.order_number}
+                            Encomenda #{order.order_number}
                           </h3>
                           <p className="text-sm text-gray-600">
                             {formatDate(order.created_at)}
@@ -278,7 +278,7 @@ export default function MesCommandes() {
               <div className="mt-3">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-gray-900">
-                    Detalhes do pedido #{selectedOrder.order_number}
+                    Detalhes da encomenda #{selectedOrder.order_number}
                   </h3>
                   <button
                     onClick={() => setSelectedOrder(null)}
@@ -359,7 +359,7 @@ export default function MesCommandes() {
                         ) : (
                           <>
                             <Store className="w-5 h-5 mr-2 text-blue-700" />
-                            <span className="font-medium text-blue-900">Recolher no restaurante</span>
+                            <span className="font-medium text-blue-900">Levantar no restaurante</span>
                           </>
                         )}
                       </div>
@@ -379,7 +379,7 @@ export default function MesCommandes() {
                         </div>
                       ) : (
                         <div className="mt-3">
-                          <p className="text-sm font-medium text-blue-900 mb-1">Local de recolha:</p>
+                          <p className="text-sm font-medium text-blue-900 mb-1">Local de levantamento:</p>
                           <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedOrder.pickup_address || settings.address)}`}
                             target="_blank"
@@ -420,9 +420,12 @@ export default function MesCommandes() {
                           <div className="flex justify-between items-start mb-2">
                             <h5 className="font-medium text-gray-900">{item.pizza_name}</h5>
                             <span className="text-sm font-medium text-gray-900">
-                              {formatPrice(item.price)}
+                              {formatPrice(item.price * item.quantity)}
                             </span>
                           </div>
+                          <p className="text-sm text-gray-600 mb-1">
+                            Quantidade: {item.quantity} × {formatPrice(item.price)}
+                          </p>
                           {item.size && item.size.toLowerCase() !== 'unique' && (
                             <p className="text-sm text-gray-600">Tamanho: {item.size}</p>
                           )}
@@ -485,7 +488,7 @@ export default function MesCommandes() {
                 <div className="space-y-6">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <p className="text-lg text-gray-900 mb-2">
-                      Pedido #{confirmingOrder.order_number}
+                      Encomenda #{confirmingOrder.order_number}
                     </p>
                     <p className="text-2xl font-bold text-blue-600">
                       Entrega prevista às {confirmingOrder.estimated_delivery_time}

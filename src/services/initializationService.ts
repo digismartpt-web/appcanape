@@ -1,114 +1,96 @@
-import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { MOCK_PIZZAS } from '../data/mockData';
 
 export class InitializationService {
   /**
-   * Vérifie si Firebase est disponible et configuré
+   * Check if Supabase is available
    */
-  static isFirebaseAvailable(): boolean {
-    return db !== null && db !== undefined;
+  static isSupabaseAvailable(): boolean {
+    return !!supabase;
   }
 
   /**
-   * Vérifie si la collection pizzas existe et contient des données
+   * Check if the pizzas table is empty
    */
   static async isPizzaCollectionEmpty(): Promise<boolean> {
-    if (!this.isFirebaseAvailable()) {
-      return true;
-    }
-
     try {
-      const pizzasRef = collection(db!, 'pizzas');
-      const snapshot = await getDocs(pizzasRef);
-      return snapshot.empty;
-    } catch (error) {
-      // Si c'est une erreur de permissions, on considère que Firebase n'est pas accessible
-      if (error instanceof Error && error.message.includes('Missing or insufficient permissions')) {
-        console.warn('⚠️ Permissions Firestore insuffisantes - utilisation des données mock');
-        return true; // On retourne true pour forcer l'utilisation des données mock
+      const { count, error } = await supabase
+        .from('pizzas')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        console.warn('⚠️ Error checking pizzas table:', error.message);
+        return true;
       }
-      console.error('Erreur lors de la vérification de la collection pizzas:', error);
+      return (count ?? 0) === 0;
+    } catch (error) {
+      console.error('Erro ao verificar a tabela de pizzas:', error);
       return true;
     }
   }
 
   /**
-   * Initialise Firebase avec les pizzas de base
+   * Initialize Supabase with default pizzas
    */
-  static async initializePizzasInFirebase(): Promise<boolean> {
-    if (!this.isFirebaseAvailable()) {
-      console.warn('Firebase non disponible - impossible d\'initialiser les pizzas');
-      return false;
-    }
-
+  static async initializePizzasInSupabase(): Promise<boolean> {
     try {
-      const pizzasRef = collection(db!, 'pizzas');
+      console.log('🍕 Inserting default pizzas in Supabase...');
+      const rows = MOCK_PIZZAS.map((pizza: any) => ({
+        name: pizza.name,
+        description: pizza.description || '',
+        category: pizza.category || '',
+        image_url: pizza.image_url || '',
+        ingredients: pizza.ingredients || [],
+        has_unique_price: pizza.has_unique_price ?? false,
+        price_small: pizza.prices?.small ?? 0,
+        price_medium: pizza.prices?.medium ?? 0,
+        price_large: pizza.prices?.large ?? 0,
+        customizable: pizza.customizable ?? false,
+        max_custom_ingredients: pizza.max_custom_ingredients ?? 3,
+        custom_ingredients: pizza.custom_ingredients || [],
+        active: true
+      }));
 
-      console.log('🍕 Initialisation des pizzas dans Firebase...');
+      const { error } = await supabase.from('pizzas').insert(rows);
+      if (error) throw error;
 
-      for (const pizza of MOCK_PIZZAS) {
-        await addDoc(pizzasRef, {
-          ...pizza,
-          active: true,
-          created_at: serverTimestamp(),
-          updated_at: serverTimestamp()
-        });
-      }
-
-      console.log(`✅ ${MOCK_PIZZAS.length} pizzas ajoutées avec succès dans Firebase`);
+      console.log(`✅ ${MOCK_PIZZAS.length} pizzas added to Supabase`);
       return true;
     } catch (error) {
-      console.error('❌ Erreur lors de l\'initialisation des pizzas:', error);
+      console.error('❌ Erro na inicialização das pizzas:', error);
       return false;
     }
   }
 
   /**
-   * Initialise automatiquement l'application
+   * Auto-initialize the application
    */
   static async autoInitialize(): Promise<{
-    firebaseAvailable: boolean;
+    supabaseAvailable: boolean;
     pizzasInitialized: boolean;
-    source: 'firebase' | 'mock';
+    source: 'supabase' | 'mock';
   }> {
-    const firebaseAvailable = this.isFirebaseAvailable();
+    const available = this.isSupabaseAvailable();
 
-    if (!firebaseAvailable) {
-      console.warn('🔧 Mode développement: Firebase non configuré');
-      return {
-        firebaseAvailable: false,
-        pizzasInitialized: false,
-        source: 'mock'
-      };
+    if (!available) {
+      console.warn('🔧 Supabase not configured - using mock data');
+      return { supabaseAvailable: false, pizzasInitialized: false, source: 'mock' };
     }
 
     try {
       const isEmpty = await this.isPizzaCollectionEmpty();
 
       if (isEmpty) {
-        console.log('📦 Base de données vide détectée.');
-
-        return {
-          firebaseAvailable: true,
-          pizzasInitialized: false,
-          source: 'firebase'
-        };
-      } else {
-        console.log('✅ Base de données Firebase déjà configurée');
-        return {
-          firebaseAvailable: true,
-          pizzasInitialized: true,
-          source: 'firebase'
-        };
+        console.log('📦 Empty database detected.');
+        return { supabaseAvailable: true, pizzasInitialized: false, source: 'supabase' };
+      }
+ else {
+        console.log('✅ Supabase already configured with data');
+        return { supabaseAvailable: true, pizzasInitialized: true, source: 'supabase' };
       }
     } catch (error) {
-      console.error('❌ Erreur lors de l\'auto-initialisation:', error);
-      return {
-        firebaseAvailable: true,
-        pizzasInitialized: false,
-        source: 'firebase'
-      };
+      console.error('❌ Erro na auto-inicialização:', error);
+      return { supabaseAvailable: true, pizzasInitialized: false, source: 'supabase' };
     }
   }
 }

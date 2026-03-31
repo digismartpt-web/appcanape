@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { extrasService } from '../services/firebaseService';
-import { usePizzeriaSettings } from '../hooks/usePizzeriaSettings';
+import { usePizzasStore } from '../stores/pizzasStore';
+import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 import { Pizza } from '../types';
 import type { Extra } from '../types';
 
@@ -20,16 +20,29 @@ export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalPr
   const [selectedExtras, setSelectedExtras] = useState<Extra[]>([]);
   const [customIngredients, setCustomIngredients] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
-  const [availableExtras, setAvailableExtras] = useState<Extra[]>([]);
+  const { extras: availableExtras } = usePizzasStore();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { settings } = usePizzeriaSettings();
+  const { settings } = usePizzariaSettings();
   const commission = settings.service_fee_percentage || 10;
 
   // Réinitialiser les personnalisations quand une nouvelle pizza est sélectionnée
   useEffect(() => {
     if (isOpen && pizza) {
-      setSelectedSize('medium');
+      // Determinar o tamanho inicial baseado nos preços disponíveis
+      let initialSize: 'small' | 'medium' | 'large' = 'medium';
+      
+      if (!pizza.unique_price || pizza.unique_price === 0) {
+        if (pizza.prices.medium > 0) {
+          initialSize = 'medium';
+        } else if (pizza.prices.small > 0) {
+          initialSize = 'small';
+        } else if (pizza.prices.large > 0) {
+          initialSize = 'large';
+        }
+      }
+      
+      setSelectedSize(initialSize);
       setRemovedIngredients([]);
       setSelectedExtras([]);
       setCustomIngredients([]);
@@ -37,36 +50,7 @@ export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalPr
     }
   }, [isOpen, pizza?.id]);
 
-  // S'abonner aux extras en temps réel
-  useEffect(() => {
-    try {
-      const unsubscribe = extrasService.subscribeToActiveExtras((firebaseExtras) => {
-        setAvailableExtras(firebaseExtras);
-
-        // Mettre à jour les extras sélectionnés si certains ont été modifiés ou supprimés
-        setSelectedExtras(prevSelected => {
-          if (prevSelected.length === 0) return prevSelected;
-
-          // Garder uniquement les extras qui sont encore disponibles
-          const stillAvailable = prevSelected.filter(selected =>
-            firebaseExtras.some(available => available.id === selected.id)
-          );
-
-          // Si le nombre d'extras a changé ou si on veut s'assurer que les prix sont à jour
-          return stillAvailable.map(selected => {
-            const latestVersion = firebaseExtras.find(available => available.id === selected.id);
-            return latestVersion || selected;
-          });
-        });
-      });
-
-      // Cleanup: se désabonner quand le composant est démonté
-      return () => unsubscribe();
-    } catch (error) {
-      console.warn('Erreur lors de l\'abonnement aux extras:', error);
-      setAvailableExtras([]);
-    }
-  }, []);
+  // Extras são agora fornecidos via PizzasStore global
 
   if (!isOpen) return null;
 

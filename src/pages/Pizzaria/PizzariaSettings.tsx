@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Save, Upload, MapPin, Phone, Mail, Clock, Building, Volume2, VolumeX } from 'lucide-react';
-import { usePizzeriaSettings, type PizzeriaSettings } from '../../hooks/usePizzeriaSettings';
+import { usePizzariaSettings, type PizzariaSettings } from '../../hooks/usePizzariaSettings';
 import { audioNotificationService } from '../../services/audioNotificationService';
 import { OpeningHoursInput } from '../../components/OpeningHoursInput';
 
-export function PizzeriaSettings() {
-  const { settings: firestoreSettings, loading: loadingSettings, updateSettings } = usePizzeriaSettings();
-  const [settings, setSettings] = useState<PizzeriaSettings | null>(null);
+export function PizzariaSettings() {
+  const { settings: firestoreSettings, loading: loadingSettings, updateSettings } = usePizzariaSettings();
+  const [settings, setSettings] = useState<PizzariaSettings | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(audioNotificationService.getEnabled());
@@ -45,8 +45,8 @@ export function PizzeriaSettings() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('🚀 Sauvegarde des paramètres dans Firestore');
-    console.log('📋 Données à sauvegarder:', settings);
+    console.log('🚀 Gravação das configurações no Supabase');
+    console.log('📋 Dados a gravar:', settings);
     setIsSaving(true);
     setMessage(null);
 
@@ -75,7 +75,7 @@ export function PizzeriaSettings() {
 
       const success = await updateSettings(settingsToSave);
 
-      console.log('📊 Résultat de updateSettings:', success);
+      console.log('📊 Resultado de updateSettings:', success);
 
       if (success) {
         setMessage({ type: 'success', text: 'Configurações guardadas com sucesso!' });
@@ -85,7 +85,7 @@ export function PizzeriaSettings() {
       }
 
     } catch (error: any) {
-      console.error('❌ Erreur lors de la sauvegarde:', error);
+      console.error('❌ Erro ao guardar:', error);
       setMessage({ type: 'error', text: error.message || 'Erro ao guardar as configurações' });
     } finally {
       setIsSaving(false);
@@ -93,12 +93,12 @@ export function PizzeriaSettings() {
   };
 
   // Atualizar campo
-  const updateField = (field: keyof PizzeriaSettings, value: any) => {
+  const updateField = (field: keyof PizzariaSettings, value: any) => {
     setSettings(prev => prev ? ({ ...prev, [field]: value }) : null);
   };
 
   // Atualizar horário
-  const updateOpeningHour = (day: keyof PizzeriaSettings['opening_hours'], value: string) => {
+  const updateOpeningHour = (day: keyof PizzariaSettings['opening_hours'], value: string) => {
     setSettings(prev => prev ? ({
       ...prev,
       opening_hours: {
@@ -180,15 +180,18 @@ export function PizzeriaSettings() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-primary-700 mb-2">
+              <label htmlFor="logo-url" className="block text-sm font-medium text-primary-700 mb-2">
                 URL do Logo
               </label>
               <input
                 type="url"
-                value={settings.logo_url}
+                id="logo-url"
+                name="logo-url"
+                value={settings.logo_url || ''}
                 onChange={(e) => updateField('logo_url', e.target.value)}
                 className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
                 placeholder="https://exemplo.com/logo.png"
+                title="URL do logotipo"
               />
               <p className="text-xs text-primary-500 mt-1">
                 Cole aqui o link da sua imagem de logo
@@ -205,15 +208,19 @@ export function PizzeriaSettings() {
           </h2>
 
           <div>
-            <label className="block text-sm font-medium text-primary-700 mb-1">
+            <label htmlFor="pizzaria-name" className="block text-sm font-medium text-primary-700 mb-1">
               Nome *
             </label>
             <input
               type="text"
-              value={settings.name}
+              id="pizzaria-name"
+              name="pizzaria-name"
+              value={settings.name || ''}
               onChange={(e) => updateField('name', e.target.value)}
               className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
               required
+              title="Nome da pizzaria"
+              placeholder="Introduza o nome da pizzaria"
             />
           </div>
         </div>
@@ -251,17 +258,20 @@ export function PizzeriaSettings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-primary-700 mb-2">
+            <label htmlFor="max-delivery-distance" className="block text-sm font-medium text-primary-700 mb-2">
               Distância Máxima de Entrega (km)
             </label>
             <input
               type="number"
+              id="max-delivery-distance"
+              name="max-delivery-distance"
               value={settings.max_delivery_distance || ''}
               onChange={(e) => updateField('max_delivery_distance', e.target.value ? Number(e.target.value) : 0)}
               className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
               placeholder="Ex: 10"
               min="0"
               step="0.1"
+              title="Distância máxima de entrega em km"
             />
             <p className="text-xs text-primary-500 mt-1">
               Deixe em branco ou 0 para não limitar. Os clientes receberão um alerta se o endereço estiver além desta distância.
@@ -269,17 +279,20 @@ export function PizzeriaSettings() {
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-primary-700 mb-2">
+            <label htmlFor="delivery-fee" className="block text-sm font-medium text-primary-700 mb-2">
               Custo de Entrega (€)
             </label>
             <input
               type="number"
+              id="delivery-fee"
+              name="delivery-fee"
               value={settings.delivery_fee ?? ''}
               onChange={(e) => updateField('delivery_fee', e.target.value ? Number(e.target.value) : 0)}
               className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
               placeholder="Ex: 2.50"
               min="0"
               step="0.01"
+              title="Custo de entrega em euros"
             />
             {settings.delivery_fee !== undefined && settings.delivery_fee > 0 && (
               <p className="text-xs text-green-600 mt-1 font-medium italic">
@@ -292,19 +305,22 @@ export function PizzeriaSettings() {
           </div>
 
           <div className="mt-6">
-            <label className="block text-sm font-medium text-primary-700 mb-2">
+            <label htmlFor="def-prep-time" className="block text-sm font-medium text-primary-700 mb-2">
               Tempo de Preparação Padrão (min)
             </label>
             <input
               type="number"
+              id="def-prep-time"
+              name="def-prep-time"
               value={settings.default_preparation_time ?? ''}
               onChange={(e) => updateField('default_preparation_time', e.target.value ? Number(e.target.value) : 10)}
               className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
               placeholder="Ex: 10"
               min="1"
+              title="Tempo de preparação padrão em minutos"
             />
             <p className="text-xs text-primary-500 mt-1">
-              Tempo sugerido ao confirmer une nova encomenda.
+              Tempo sugerido ao confirmar uma nova encomenda.
             </p>
           </div>
         </div>
@@ -325,7 +341,7 @@ export function PizzeriaSettings() {
               <textarea
                 id="restaurant-address"
                 name="restaurant-address"
-                value={settings.address}
+                value={settings.address || ''}
                 onChange={(e) => updateField('address', e.target.value)}
                 className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
                 rows={3}
@@ -348,7 +364,7 @@ export function PizzeriaSettings() {
                   type="tel"
                   id="restaurant-phone"
                   name="restaurant-phone"
-                  value={settings.phone}
+                  value={settings.phone || ''}
                   onChange={(e) => updateField('phone', e.target.value)}
                   className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
                   title="Número de telefone do restaurante"
@@ -365,7 +381,7 @@ export function PizzeriaSettings() {
                   type="email"
                   id="restaurant-email"
                   name="restaurant-email"
-                  value={settings.email}
+                  value={settings.email || ''}
                   onChange={(e) => updateField('email', e.target.value)}
                   className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
                   title="Email de contacto do restaurante"
@@ -395,17 +411,21 @@ export function PizzeriaSettings() {
           </div>
 
           <div className="mt-4 border-t pt-4">
-            <label className="block text-sm font-medium text-primary-700 mb-2">
+            <label htmlFor="cutoff-minutes" className="block text-sm font-medium text-primary-700 mb-2">
               Bloqueio de Encomendas (minutos antes do fecho)
             </label>
             <div className="flex items-center gap-3">
               <input
                 type="number"
+                id="cutoff-minutes"
+                name="cutoff-minutes"
                 value={settings.cutoff_minutes_before_closing ?? 30}
                 onChange={(e) => updateField('cutoff_minutes_before_closing', e.target.value ? Number(e.target.value) : 30)}
                 className="w-24 px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
                 min="0"
                 max="120"
+                title="Minutos antes do fecho para bloquear encomendas"
+                placeholder="30"
               />
               <span className="text-sm text-gray-500">minutos</span>
             </div>
@@ -451,6 +471,7 @@ export function PizzeriaSettings() {
                 onClick={handleToggleAudio}
                 className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${audioEnabled ? 'bg-accent-500' : 'bg-gray-300'
                   }`}
+                title={audioEnabled ? 'Desativar som de notificação' : 'Ativar som de notificação'}
               >
                 <span
                   className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${audioEnabled ? 'translate-x-7' : 'translate-x-1'
@@ -514,7 +535,7 @@ export function PizzeriaSettings() {
               className="flex items-center space-x-2 bg-accent-500 text-white px-6 py-3 rounded-md hover:bg-accent-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
             >
               <Save className="h-5 w-5" />
-              <span>{isSaving ? 'A guardar...' : 'Guardar Configurações'}</span>
+              <span>{isSaving ? 'A gravar...' : 'Guardar Configurações'}</span>
             </button>
           </div>
         </div>

@@ -5,33 +5,33 @@ import { cn } from '../../lib/utils';
 
 const menuItems = [
   {
-    path: '/pizzeria/commandes',
+    path: '/pizzaria/commandes',
     label: 'Encomendas',
     icon: ShoppingBag,
   },
   {
-    path: '/pizzeria/menu',
+    path: '/pizzaria/menu',
     label: 'Menu',
     icon: Pizza,
   },
   {
-    path: '/pizzeria/categorias',
+    path: '/pizzaria/categorias',
     label: 'Categorias',
     icon: Tag,
   },
   {
-    path: '/pizzeria/promocoes',
+    path: '/pizzaria/promocoes',
     label: 'Promoções',
     icon: Gift,
   },
   {
-    path: '/pizzeria/configuracoes',
+    path: '/pizzaria/configuracoes',
     label: 'Configurações',
     icon: Settings,
   }
 ];
 
-export function PizzeriaSidebar() {
+export function PizzariaSidebar() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 

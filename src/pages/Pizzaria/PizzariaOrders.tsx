@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, XCircle, Package, Truck, Phone, Mail, MapPin, Eye, Trash2, Store } from 'lucide-react';
-import { ordersService } from '../../services/firebaseService';
-import { usePizzeriaSettings } from '../../hooks/usePizzeriaSettings';
+import { ordersService } from '../../services/supabaseService';
+import { useOrderStore } from '../../stores/orderStore';
+import { usePizzariaSettings } from '../../hooks/usePizzariaSettings';
 import { calculateDeliveryTime } from '../../services/deliveryTimeService';
 import toast from 'react-hot-toast';
 import type { Order, OrderStatus } from '../../types';
 
 const statusConfig = {
+  pendente_pagamento: { label: 'Pagamento Pendente', color: 'bg-gray-100 text-gray-800', icon: Clock },
   en_attente: { label: 'Em Espera', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
   confirmee: { label: 'Confirmada', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
   en_preparation: { label: 'Em Preparação', color: 'bg-orange-100 text-orange-800', icon: Package },
@@ -16,10 +18,9 @@ const statusConfig = {
   cancelled: { label: 'Cancelada', color: 'bg-red-100 text-red-800', icon: XCircle }
 };
 
-export function PizzeriaOrders() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const { settings } = usePizzeriaSettings();
-  const [loading, setLoading] = useState(true);
+export function PizzariaOrders() {
+  const { orders, loading, initAdminOrdersListener } = useOrderStore();
+  const { settings } = usePizzariaSettings();
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'all'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,17 +42,13 @@ export function PizzeriaOrders() {
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = ordersService.subscribeToAllOrders((newOrders) => {
-      setOrders(newOrders);
-      setLoading(false);
-    });
-
+    const unsubscribe = initAdminOrdersListener();
     return () => unsubscribe();
-  }, []);
+  }, [initAdminOrdersListener]);
 
   const filteredOrders = orders.filter((order) => {
-    // Ne pas afficher les commandes masquées par la pizzeria
-    if (order.pizzeria_hidden) return false;
+    // Ne pas afficher les commandes masquées par la pizzaria ou en attente de paiement
+    if (order.pizzeria_hidden || order.status === 'pendente_pagamento') return false;
 
     if (selectedStatus === 'all') return true;
     return order.status === selectedStatus;
@@ -176,7 +173,7 @@ export function PizzeriaOrders() {
 
       await ordersService.updateOrderStatus(orderId, newStatus);
     } catch (error) {
-      console.error('Erreur lors de la mise à jour du statut:', error);
+      console.error('Erro ao atualizar o estado:', error);
     }
   };
 
@@ -204,7 +201,7 @@ export function PizzeriaOrders() {
       setShowTimeModal(false);
       setEditingOrder(null);
     } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
+      console.error('Erro na atualização:', error);
       toast.error('Erro ao atualizar o tempo');
     }
   };
@@ -238,7 +235,7 @@ export function PizzeriaOrders() {
         }
         setPendingStatusChange(null);
       } else {
-        // Modification manuelle du temps de livraison
+        // Modification manuelle du tempo de livraison
         await ordersService.updateOrderDeliveryTime(
           editingDeliveryOrder.id,
           deliveryTime,
@@ -249,9 +246,9 @@ export function PizzeriaOrders() {
 
       setShowDeliveryTimeModal(false);
       setEditingDeliveryOrder(null);
-    } catch (error) {
-      console.error('Erro ao atualizar tempo de entrega:', error);
-      toast.error('Erro ao atualizar o tempo');
+    } catch (error: any) {
+      console.error('Erro detalhado ao atualizar tempo de entrega:', error);
+      toast.error(`Erro ao atualizar o tempo: ${error.message || 'Erro desconhecido'}`);
     }
   };
 
@@ -265,7 +262,7 @@ export function PizzeriaOrders() {
       setOrderToCancel(null);
       setCancellationReason('');
     } catch (error) {
-      console.error('Erreur lors de l\'annulation:', error);
+      console.error('Erro no cancelamento:', error);
       toast.error('Erro ao cancelar a encomenda');
     }
   };
@@ -299,7 +296,12 @@ export function PizzeriaOrders() {
   }, [currentPage]);
 
   const handleDeleteAllOrders = async () => {
-    const correctPassword = settings?.delete_password || 'delete123';
+    const correctPassword = settings?.delete_password || '';
+
+    if (!correctPassword) {
+      toast.error('Nenhuma senha de eliminação definida no Admin!');
+      return;
+    }
 
     if (password !== correctPassword) {
       toast.error('Senha incorreta!');
@@ -648,7 +650,7 @@ export function PizzeriaOrders() {
         </>
       )}
 
-      {/* Modal de détails */}
+      {/* Modal de detalhes */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -744,7 +746,7 @@ export function PizzeriaOrders() {
                           <Clock className="h-5 w-5 mr-2 text-blue-700" />
                           <div>
                             <p className="text-sm font-medium text-blue-900">
-                              Hora de entrega proposta pela pizzeria: {selectedOrder.estimated_delivery_time}
+                              Hora de entrega proposta pela pizzaria: {selectedOrder.estimated_delivery_time}
                             </p>
                             {selectedOrder.estimated_delivery_time_confirmed ? (
                               <p className="text-xs text-green-700 mt-1">
@@ -804,7 +806,7 @@ export function PizzeriaOrders() {
                           )}
                           {item.removed_ingredients && item.removed_ingredients.length > 0 && (
                             <div className="text-sm text-red-600 mt-1">
-                              🚫 Sans: {item.removed_ingredients.join(', ')}
+                              🚫 Sem: {item.removed_ingredients.join(', ')}
                             </div>
                           )}
                           {item.extras && item.extras.length > 0 && item.extras.some(extra => extra.name && extra.price) && (
@@ -814,7 +816,7 @@ export function PizzeriaOrders() {
                           )}
                           {item.custom_ingredients && item.custom_ingredients.length > 0 && (
                             <div className="text-sm text-blue-600 mt-1 font-medium">
-                              Ingredientes : {item.custom_ingredients.join(', ')}
+                              Ingredientes: {item.custom_ingredients.join(', ')}
                             </div>
                           )}
                         </div>
@@ -867,40 +869,49 @@ export function PizzeriaOrders() {
               <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
                 Eliminar Todas as Encomendas
               </h3>
-              <p className="text-sm text-gray-500 text-center mb-4">
-                Esta ação é irreversível. Todas as encomendas serão permanentemente eliminadas.
-              </p>
-              <div className="mb-4">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Digite a senha para confirmar:
+              <div className="bg-red-50 p-4 rounded-lg mb-6">
+                <p className="text-red-800 text-sm">
+                  Por segurança, introduza a senha de administração para confirmar a eliminação total.
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="password" title="Label (Extra Info)" className="block text-sm font-medium text-gray-700 mb-2">
+                  Senha de Confirmação
                 </label>
                 <input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Senha"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  disabled={isDeleting}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                  placeholder="Introduza a senha..."
                 />
               </div>
-              <div className="flex gap-3">
+
+              <div className="flex justify-end gap-3">
                 <button
                   onClick={() => {
                     setShowDeleteModal(false);
                     setPassword('');
                   }}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition disabled:opacity-50"
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleDeleteAllOrders}
                   disabled={isDeleting || !password}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
                 >
-                  {isDeleting ? 'A eliminar...' : 'Eliminar Todas'}
+                  {isDeleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      A eliminar...
+                    </>
+                  ) : (
+                    'Confirmar Eliminação Total'
+                  )}
                 </button>
               </div>
             </div>

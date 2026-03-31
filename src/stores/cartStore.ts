@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Pizza, Extra, PromotionRule } from '../types';
-import { promotionsService, extrasService } from '../services/firebaseService';
+import { promotionsService, extrasService } from '../services/supabaseService';
 
 interface CartItem {
   id: string;

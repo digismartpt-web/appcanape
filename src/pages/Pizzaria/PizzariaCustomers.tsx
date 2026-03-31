@@ -3,7 +3,7 @@ import { Search, Phone, MapPin, Calendar, ShoppingBag } from 'lucide-react';
 import { useOrderStore } from '../../stores/orderStore';
 import type { User } from '../../types';
 
-export function PizzeriaCustomers() {
+export function PizzariaCustomers() {
   const { orders } = useOrderStore();
   const [searchTerm, setSearchTerm] = useState('');
 

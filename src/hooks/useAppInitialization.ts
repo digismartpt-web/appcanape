@@ -3,16 +3,16 @@ import { InitializationService } from '../services/initializationService';
 
 interface InitializationState {
   loading: boolean;
-  firebaseAvailable: boolean;
+  supabaseAvailable: boolean;
   pizzasInitialized: boolean;
-  source: 'firebase' | 'mock';
+  source: 'supabase' | 'mock';
   error: string | null;
 }
 
 export function useAppInitialization() {
   const [state, setState] = useState<InitializationState>({
     loading: true,
-    firebaseAvailable: false,
+    supabaseAvailable: false,
     pizzasInitialized: false,
     source: 'mock',
     error: null
@@ -25,18 +25,18 @@ export function useAppInitialization() {
         
         setState({
           loading: false,
-          firebaseAvailable: result.firebaseAvailable,
+          supabaseAvailable: result.supabaseAvailable,
           pizzasInitialized: result.pizzasInitialized,
-          source: result.source,
+          source: result.source as 'supabase' | 'mock',
           error: null
         });
       } catch (error: any) {
         setState({
           loading: false,
-          firebaseAvailable: false,
+          supabaseAvailable: false,
           pizzasInitialized: false,
           source: 'mock',
-          error: error.message || 'Erreur lors de l\'initialisation'
+          error: error.message || 'Erro na inicialização'
         });
       }
     };

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Pizza, User, LogOut, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { CartButton } from './CartButton';
-import { usePizzeriaSettings } from '../hooks/usePizzeriaSettings';
+import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 import { checkOpeningHours } from '../services/openingHoursService';
 import toast from 'react-hot-toast';
 
@@ -15,7 +15,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { settings } = usePizzeriaSettings();
+  const { settings } = usePizzariaSettings();
 
   const handleSignOut = async () => {
     try {
@@ -23,7 +23,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
       toast.success('Sessão terminada com sucesso');
       navigate('/');
     } catch (error: any) {
-      console.error('Erreur lors de la déconnexion:', error);
+      console.error('Erro ao terminar sessão:', error);
       toast.error(error.message || 'Erro ao terminar sessão');
     }
   };
@@ -32,7 +32,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
   try {
     openingHoursCheck = settings.opening_hours ? checkOpeningHours(settings.opening_hours) : { isOpen: false };
   } catch (error) {
-    console.error('Erreur lors de la vérification des horaires:', error);
+    console.error('Erro ao verificar os horários:', error);
   }
   const canOrder = settings.is_open && openingHoursCheck.isOpen;
 
@@ -71,9 +71,9 @@ export function Navbar({ onCartClick }: NavbarProps) {
                 </Link>
                 {user.role === 'client' && (
                   <>
-                    <Link to="/mes-commandes" className="hover:text-accent-400 transition flex items-center space-x-1" title="Os meus pedidos">
+                    <Link to="/mes-commandes" className="hover:text-accent-400 transition flex items-center space-x-1" title="As minhas encomendas">
                       <ShoppingBag className="h-5 w-5" />
-                      <span className="hidden lg:inline text-sm lg:text-base">Pedidos</span>
+                      <span className="hidden lg:inline text-sm lg:text-base">Encomendas</span>
                     </Link>
                     <CartButton onClick={onCartClick} />
                   </>
@@ -84,8 +84,8 @@ export function Navbar({ onCartClick }: NavbarProps) {
                   </Link>
                 )}
                 {user.role === 'pizzeria' && (
-                  <Link to="/pizzeria" className="hover:text-accent-400 transition text-sm lg:text-base">
-                    Pizzeria
+                  <Link to="/pizzaria" className="hover:text-accent-400 transition text-sm lg:text-base">
+                    Pizzaria
                   </Link>
                 )}
                 <button
@@ -148,7 +148,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                       className="block py-2 hover:text-accent-400 transition"
                       onClick={() => setIsOpen(false)}
                     >
-                      Os meus pedidos
+                      As minhas encomendas
                     </Link>
                     <div
                       className="block py-2"
@@ -172,11 +172,11 @@ export function Navbar({ onCartClick }: NavbarProps) {
                 )}
                 {user.role === 'pizzeria' && (
                   <Link
-                    to="/pizzeria"
+                    to="/pizzaria"
                     className="block py-2 hover:text-accent-400 transition"
                     onClick={() => setIsOpen(false)}
                   >
-                    Pizzeria
+                    Pizzaria
                   </Link>
                 )}
                 <button

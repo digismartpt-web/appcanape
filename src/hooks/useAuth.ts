@@ -1,14 +1,5 @@
 import { create } from 'zustand';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInAnonymously,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import type { User, UserRole } from '../types';
 
 interface ProfileUpdateData {
@@ -25,6 +16,7 @@ interface AuthState {
   signOut: () => Promise<void>;
   updateProfile: (data: ProfileUpdateData) => Promise<void>;
   initializeAuth: () => void;
+  _loadUserProfile: (uid: string, email: string | undefined) => Promise<void>;
 }
 
 export const useAuth = create<AuthState>((set, get) => ({
@@ -32,161 +24,134 @@ export const useAuth = create<AuthState>((set, get) => ({
   loading: true,
 
   initializeAuth: () => {
-    if (!auth || !db) {
-      console.warn('Firebase non disponible');
-      set({ user: null, loading: false });
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth!, async (firebaseUser: FirebaseUser | null) => {
-      console.log('Auth state changed:', firebaseUser ? firebaseUser.uid : 'null');
-
-      if (firebaseUser) {
-        try {
-          const userRef = doc(db!, 'users', firebaseUser.uid);
-          const userSnap = await getDoc(userRef);
-
-          if (userSnap.exists()) {
-            const userData = {
-              id: firebaseUser.uid,
-              ...userSnap.data(),
-              email: userSnap.data().email || firebaseUser.email || '',
-              full_name: userSnap.data().full_name || firebaseUser.displayName || '',
-              phone: userSnap.data().phone || '',
-              address: userSnap.data().address || '',
-              role: userSnap.data().role || 'client',
-              created_at: userSnap.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString()
-            } as User;
-            console.log('User loaded:', userData.email);
-            set({ user: userData, loading: false });
-          } else {
-            const defaultUser: User = {
-              id: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              role: 'client',
-              full_name: firebaseUser.displayName || '',
-              phone: '',
-              address: '',
-              created_at: new Date().toISOString()
-            };
-
-            await setDoc(userRef, {
-              email: defaultUser.email,
-              role: defaultUser.role,
-              full_name: defaultUser.full_name,
-              phone: defaultUser.phone,
-              address: defaultUser.address,
-              created_at: new Date(),
-              updated_at: new Date()
-            });
-
-            console.log('Default user created:', defaultUser.email);
-            set({ user: defaultUser, loading: false });
-          }
-        } catch (error) {
-          console.error('Erreur lors de la récupération du profil utilisateur:', error);
-          set({ user: null, loading: false });
-        }
+    // 1. Primeiro tentamos recuperar a sessão existente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        get()._loadUserProfile(session.user.id, session.user.email);
       } else {
-        console.log('👤 [Auth] No user found, initiating anonymous session...');
-        try {
-          await signInAnonymously(auth!);
-          console.log('✅ [Auth] Anonymous sign-in requested');
-        } catch (error: any) {
-          console.error('❌ [Auth] Anonymous sign in failed:', error.code, error.message);
-          if (error.code === 'auth/operation-not-allowed') {
-            console.error('👉 ALICE: Tem de ativar o "Início de sessão anónimo" no Firebase Console!');
-            alert('Configuração Firebase: Por favor ative o "Início de sessão anónimo" para que os visitantes vejam o menu.');
-          }
+        // Tentativa de sessão anónima se não houver sessão ativa
+        console.log('👤 [Auth] Nenhum utilizador encontrado, a iniciar sessão anónima...');
+        supabase.auth.signInAnonymously().catch(error => {
+          console.error('❌ [Auth] Falha na ligação anónima:', error);
           set({ user: null, loading: false });
+        });
+      }
+    });
+
+    // 2. Depois subscrevemos as mudanças de estado
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id || 'null');
+      
+      if (session?.user) {
+        get()._loadUserProfile(session.user.id, session.user.email);
+      } else {
+        set({ user: null, loading: false });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  },
+
+  signIn: async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message || 'Email ou palavra-passes incorretos');
+  },
+
+  signUp: async (email, password, userData) => {
+    // 1. Criar a conta Auth
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: userData.full_name,
         }
       }
     });
 
-    return unsubscribe;
-  },
-
-  signUp: async (email: string, password: string, userData: { full_name: string; phone: string; address: string; role: UserRole }) => {
-    if (!auth || !db) {
-      throw new Error('Firebase non configuré.');
-    }
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth!, email, password);
-      const user = userCredential.user;
-
-      const userRef = doc(db!, 'users', user.uid);
-      await setDoc(userRef, {
-        email: user.email || '',
-        role: userData.role,
-        full_name: userData.full_name,
-        phone: userData.phone,
-        address: userData.address,
-        created_at: new Date(),
-        updated_at: new Date()
-      });
-    } catch (error: any) {
-      throw new Error(error.message || 'Erreur lors de la création du compte');
-    }
-  },
-
-  signIn: async (email: string, password: string) => {
-    if (!auth) {
-      throw new Error('Firebase non configuré.');
-    }
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth!, email, password);
-      console.log('Connexion réussie pour:', userCredential.user.uid);
-    } catch (error: any) {
-      throw new Error(error.message || 'Email ou mot de passe incorrect');
-    }
+    if (authError) throw new Error(authError.message || 'Erro durante a inscrição no Supabase Auth');
+    
+    // O perfil será automaticamente criado por um trigger SQL no Supabase.
+    // O utilizador receberá um email de confirmação conforme as definições do Supabase.
   },
 
   signOut: async () => {
-    if (!auth) {
-      console.error('Firebase non configuré - impossible de se déconnecter');
-      throw new Error('Firebase non configuré. Impossible de se déconnecter.');
-    }
-
+    console.log('A terminar sessão...');
     try {
-      console.log('Déconnexion en cours...');
-
+      // Clean cart before signout
       const cartStore = await import('../stores/cartStore');
       cartStore.useCartStore.getState().clearCart();
 
-      await firebaseSignOut(auth!);
-
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       set({ user: null, loading: false });
-
-      console.log('Déconnexion Firebase réussie');
+      console.log('Sessão terminada com sucesso');
     } catch (error: any) {
-      console.error('Erreur lors de la déconnexion:', error);
-      throw new Error(error.message || 'Erreur lors de la déconnexion');
+      console.error('Erro ao terminar sessão:', error);
+      throw new Error(error.message || 'Erro durante o término da sessão');
     }
   },
 
   updateProfile: async (data: ProfileUpdateData) => {
-    if (!auth || !db) throw new Error('Firebase non configuré');
+    const { data: sessionData } = await supabase.auth.getSession();
+    const currentUser = sessionData.session?.user;
+    
+    if (!currentUser) throw new Error('Utilizador não ligado');
 
-    const currentUser = auth.currentUser;
-    if (!currentUser) throw new Error('Utilisateur non connecté');
-
-    try {
-      const userRef = doc(db!, 'users', currentUser.uid);
-      await setDoc(userRef, {
+    const { error } = await supabase
+      .from('users_profiles')
+      .update({
         ...data,
-        updated_at: new Date()
-      }, { merge: true });
+        updated_at: new Date().toISOString()
+      })
+      .eq('supabase_auth_id', currentUser.id);
 
-      set(state => ({
-        user: state.user ? {
-          ...state.user,
-          ...data
-        } : null
-      }));
-    } catch (error: any) {
-      throw new Error(error.message || 'Erreur lors de la mise à jour du profil');
+    if (error) throw new Error(error.message || 'Erro ao atualizar o perfil');
+
+    // Atualizar o estado local
+    set(state => ({
+      user: state.user ? {
+        ...state.user,
+        ...data
+      } : null
+    }));
+  },
+  
+  // Função utilitária interna para carregar o perfil a partir do supabase_auth_id
+  _loadUserProfile: async (uid: string, email: string | undefined) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('users_profiles')
+        .select('*')
+        .eq('supabase_auth_id', uid)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (profile) {
+        const userData: User = {
+          id: profile.supabase_auth_id,
+          email: profile.email || email || '',
+          full_name: profile.full_name || '',
+          phone: profile.phone || '',
+          address: profile.address || '',
+          role: profile.role || 'client',
+          created_at: profile.created_at
+        };
+        set({ user: userData, loading: false });
+      } else {
+        // O perfil ainda não existe (pode acontecer para uma sessão anónima ainda não ativa ou nova conta)
+        // ATENÇÃO: O trigger DB gere a criação automática para contas reais.
+        // Para as sessões anónimas, pode haver um atraso ou comportamento diferente.
+        set({ user: null, loading: false });
+      }
+    } catch (err) {
+      console.error('Erro ao carregar o perfil:', err);
+      set({ user: null, loading: false });
     }
   }
 }));

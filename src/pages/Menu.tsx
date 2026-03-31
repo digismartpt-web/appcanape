@@ -2,25 +2,17 @@ import { useState, useEffect } from 'react';
 import { Filter, Pizza as PizzaIcon } from 'lucide-react';
 import { PizzaModal } from '../components/PizzaModal';
 import { useCartStore } from '../stores/cartStore';
-import { pizzasService } from '../services/firebaseService';
-import { InitializationService } from '../services/initializationService';
-import { usePizzeriaCategories } from '../hooks/usePizzeriaCategories';
-import { usePizzeriaSettings } from '../hooks/usePizzeriaSettings';
+import { usePizzasStore } from '../stores/pizzasStore';
+import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 import { useAuth } from '../hooks/useAuth';
 import type { Pizza, Extra } from '../types';
 
 export function Menu() {
   const { user } = useAuth();
 
-  // Hydratation synchrone à partir du cache local pour 0ms de latence
-  const [pizzas, setPizzas] = useState<Pizza[]>(() => {
-    try {
-      const cached = localStorage.getItem('pizzeria_pizzas_cache');
-      return cached ? JSON.parse(cached) : [];
-    } catch (e) {
-      return [];
-    }
-  });
+  const { pizzas, loading: pizzasLoading, categories: activeCategories } = usePizzasStore();
+  const { settings } = usePizzariaSettings();
+  const commission = settings.service_fee_percentage || 10;
 
   const [loading, setLoading] = useState(() => pizzas.length === 0);
   const [selectedPizza, setSelectedPizza] = useState<Pizza | null>(null);
@@ -28,88 +20,65 @@ export function Menu() {
   const [currentPage, setCurrentPage] = useState(1);
   const pizzasPerPage = 9;
   const { addItem } = useCartStore();
-  const { activeCategories } = usePizzeriaCategories();
-  const { settings } = usePizzeriaSettings();
-  const commission = settings.service_fee_percentage || 10;
 
-  // Charger les pizzas ao démarrage
+  // Atualizar loading state quando store mudar
   useEffect(() => {
-    let isMounted = true;
-    let unsubscribe = () => { };
+    if (!pizzasLoading) {
+      setLoading(false);
+    }
+  }, [pizzasLoading]);
 
-    const setupRealtimeUpdates = () => {
-      if (!InitializationService.isFirebaseAvailable()) {
-        setPizzas([]);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(pizzas.length === 0);
-      unsubscribe = pizzasService.subscribeToActivePizzas((updatedPizzas) => {
-        if (isMounted) {
-          setPizzas(updatedPizzas);
-          setLoading(false);
-          // Sauvegarder dans le cache local pour la prochaine visite
-          try {
-            localStorage.setItem('pizzeria_pizzas_cache', JSON.stringify(updatedPizzas));
-          } catch (e) {
-            console.warn('⚠️ [Cache] Failed to save to localStorage');
-          }
-        }
-      });
-    };
-
-    setupRealtimeUpdates();
-
-    return () => {
-      isMounted = false;
-      unsubscribe();
-    };
-  }, []); // Run once on mount for instant load of public data
-
-  // Obtenir les catégories disponibles
+  // Obter as categorias disponíveis (apenas as ativas)
   const getAvailableCategories = () => {
     if (activeCategories.length > 0) {
-      // Utiliser les catégories configurées
-      return activeCategories.map(cat => cat.name.toLowerCase());
+      // Filtrar apenas categorias ativas
+      return activeCategories
+        .filter(cat => cat.active !== false)
+        .map(cat => cat.name.toLowerCase());
     } else {
-      // Fallback : extraire les catégories des pizzas
-      const categories = [...new Set(pizzas.map(pizza => pizza.category))];
+      // Fallback: extrair as categorias das pizzas
+      const categories = [...new Set(pizzas.map(pizza => pizza.category || 'Outros'))];
       return categories;
     }
   };
 
   const availableCategories = getAvailableCategories();
 
-  // Filtrer et trier les pizzas
+  // Filtrar e ordenar as pizzas
   const filteredPizzas = pizzas
     .filter(pizza => {
-      const pizzaCategory = (pizza.category || 'Outros').toLowerCase();
-      const matchesCategory = selectedCategory === 'all' ||
-        pizzaCategory === selectedCategory.toLowerCase();
-      return matchesCategory;
+      // 1. Filtrar se a categoria da pizza está ativa
+      const categoryName = (pizza.category || 'Outros').toLowerCase();
+      const isCategoryActive = activeCategories.length === 0 || 
+        activeCategories.some(cat => cat.name.toLowerCase() === categoryName && cat.active !== false);
+      
+      if (!isCategoryActive) return false;
+
+      // 2. Filtrar pela categoria selecionada
+      if (selectedCategory === 'all') return true;
+      return categoryName === selectedCategory.toLowerCase();
     })
     .sort((a, b) => {
-      const catA = a.category || 'Outros';
-      const catB = b.category || 'Outros';
+      const catA = (a.category || 'Outros');
+      const catB = (b.category || 'Outros');
       const categoryCompare = catA.localeCompare(catB);
       if (categoryCompare !== 0) return categoryCompare;
-      return a.name.localeCompare(b.name);
+      return (a.name || '').localeCompare(b.name || '');
     });
 
-  // Calculer les pizzas pour la page actuelle
+  // Calcular as pizzas para a página atual
   const indexOfLastPizza = currentPage * pizzasPerPage;
   const indexOfFirstPizza = indexOfLastPizza - pizzasPerPage;
   const currentPizzas = filteredPizzas.slice(indexOfFirstPizza, indexOfLastPizza);
   const totalPages = Math.ceil(filteredPizzas.length / pizzasPerPage);
 
-  // Réinitialiser à la page 1 quand les filtres changent et scroller en haut
+  // Repor para a página 1 quando os filtros mudam e fazer scroll para cima
   useEffect(() => {
     setCurrentPage(1);
     window.scrollTo(0, 0);
   }, [selectedCategory]);
 
-  // Scroller en haut quand la page change
+  // Fazer scroll para cima quando a página muda
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentPage]);
@@ -249,7 +218,7 @@ export function Menu() {
                       onClick={() => setSelectedPizza(pizza)}
                     >
                       <div className="w-full h-40 sm:h-48 bg-primary-100 flex items-center justify-center relative overflow-hidden">
-                        {/* Placeholder Background */}
+                        {/* Fundo de reserva */}
                         <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-primary-100 animate-pulse"></div>
                         <img
                           src={pizza.image_url}
@@ -280,14 +249,14 @@ export function Menu() {
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                           <div className="text-sm text-primary-500">
                             {(() => {
-                              // Si prix unique, l'afficher
+                              // Se preço único, apresentá-lo
                               if (pizza.unique_price !== undefined && pizza.unique_price > 0) {
                                 return (
                                   <span className="text-lg sm:text-xl font-bold text-accent-600">{pizza.unique_price}€</span>
                                 );
                               }
 
-                              // Sinon, afficher le prix minimum des tailles
+                              // Caso contrário, apresentar o preço mínimo dos tamanhos
                               const availablePrices = [];
                               if (pizza.prices.small > 0) availablePrices.push(pizza.prices.small);
                               if (pizza.prices.medium > 0) availablePrices.push(pizza.prices.medium);
@@ -319,7 +288,7 @@ export function Menu() {
                   <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       <p className="text-xs sm:text-sm text-primary-600 text-center sm:text-left">
-                        Mostrando {indexOfFirstPizza + 1} a {Math.min(indexOfLastPizza, filteredPizzas.length)} de {filteredPizzas.length} produtos
+                        A mostrar {indexOfFirstPizza + 1} a {Math.min(indexOfLastPizza, filteredPizzas.length)} de {filteredPizzas.length} produtos
                       </p>
                       <div className="flex items-center space-x-2">
                         <button
@@ -330,7 +299,7 @@ export function Menu() {
                           ← Anterior
                         </button>
 
-                        {/* Numéros de pages - Caché si trop de pages sur mobile */}
+                        {/* Números de páginas - Oculto se houver demasiadas páginas no telemóvel */}
                         <div className="hidden sm:flex items-center space-x-2">
                           {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
                             <button
@@ -356,7 +325,7 @@ export function Menu() {
                           disabled={currentPage === totalPages}
                           className="px-3 sm:px-4 py-2 text-sm border border-primary-300 rounded-md hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
                         >
-                          Próxima →
+                          Seguinte →
                         </button>
                       </div>
                     </div>

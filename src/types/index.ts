@@ -1,7 +1,7 @@
 // Types de base pour l'application
 export type UserRole = 'admin' | 'pizzeria' | 'client';
 
-export type OrderStatus = 'en_attente' | 'confirmee' | 'en_preparation' | 'prete' | 'em_entrega' | 'recuperee' | 'cancelled';
+export type OrderStatus = 'pendente_pagamento' | 'en_attente' | 'confirmee' | 'en_preparation' | 'prete' | 'em_entrega' | 'recuperee' | 'cancelled';
 
 export interface User {
   id: string;
@@ -37,7 +37,7 @@ export interface Pizza {
   unique_price?: number;
   ingredients: string[];
   category: string;
-  vegetarian: boolean;
+  vegetarian?: boolean;
   active?: boolean;
   customizable?: boolean;
   max_custom_ingredients?: number;
@@ -74,10 +74,12 @@ export interface Order {
   order_number: number;
   user_id: string;
   user: {
+    id?: string;
     full_name: string;
     phone: string;
     address: string;
     email: string;
+    role?: string;
   };
   pickup_address: string;
   delivery_type: DeliveryType;

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Edit2, Trash2, Tag } from 'lucide-react';
-import { usePizzeriaCategories } from '../../hooks/usePizzeriaCategories';
+import { usePizzariaCategories } from '../../hooks/usePizzariaCategories';
 
 interface CategoryFormData {
   name: string;
@@ -14,15 +14,14 @@ const initialFormData: CategoryFormData = {
   active: true
 };
 
-export function PizzeriaCategories() {
+export function PizzariaCategories() {
   const { 
     categories, 
-    activeCategories, 
     addCategory, 
     updateCategory, 
     deleteCategory, 
     toggleActive 
-  } = usePizzeriaCategories();
+  } = usePizzariaCategories();
   
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -35,18 +34,18 @@ export function PizzeriaCategories() {
 
     try {
       if (editingCategory) {
-        // Modifier une catégorie existante
-        updateCategory(editingCategory.id, formData);
+        // Modificar uma categoria existente
+        await updateCategory(editingCategory.id, formData);
       } else {
-        // Créer une nouvelle catégorie
-        addCategory(formData);
+        // Criar uma nova categoria
+        await addCategory(formData);
       }
 
       setShowModal(false);
       setEditingCategory(null);
       setFormData(initialFormData);
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
+      console.error('Erro ao guardar:', error);
       alert('Erro ao guardar a categoria');
     } finally {
       setIsSaving(false);
@@ -69,18 +68,18 @@ export function PizzeriaCategories() {
     }
 
     try {
-      deleteCategory(category.id);
+      await deleteCategory(category.id);
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
+      console.error('Erro ao apagar:', error);
       alert('Erro ao eliminar a categoria');
     }
   };
 
   const handleToggleActive = async (category: any) => {
     try {
-      toggleActive(category.id);
+      await toggleActive(category.id);
     } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
+      console.error('Erro na atualização:', error);
       alert('Erro ao atualizar a categoria');
     }
   };
@@ -213,7 +212,7 @@ export function PizzeriaCategories() {
         </div>
       )}
 
-      {/* Modal d'ajout/modification */}
+      {/* Modal de adição/modificação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
@@ -282,7 +281,7 @@ export function PizzeriaCategories() {
                   disabled={isSaving}
                   className="px-4 py-2 bg-accent-500 text-white rounded-md hover:bg-accent-600 disabled:opacity-50"
                 >
-                  {isSaving ? 'A guardar...' : (editingCategory ? 'Atualizar' : 'Adicionar')}
+                  {isSaving ? 'A gravar...' : (editingCategory ? 'Atualizar' : 'Adicionar')}
                 </button>
               </div>
             </form>

@@ -2,7 +2,7 @@ const CACHE_NAME = 'pizzeria-image-cache-v1';
 
 // Caching strategy: Stale-While-Revalidate for images
 self.addEventListener('fetch', (event) => {
-    if (event.request.destination === 'image' || event.request.url.includes('firebasestorage')) {
+    if (event.request.destination === 'image') {
         event.respondWith(
             caches.open(CACHE_NAME).then((cache) => {
                 return cache.match(event.request).then((cachedResponse) => {

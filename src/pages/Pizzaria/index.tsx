@@ -1,21 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { PizzeriaSidebar } from './PizzeriaSidebar';
-import { PizzeriaDashboard } from './PizzeriaDashboard';
-import { PizzeriaOrders } from './PizzeriaOrders';
-import { PizzeriaMenu } from './PizzeriaMenu';
-import { PizzeriaCategories } from './PizzeriaCategories';
-import { PizzeriaPromotions } from './PizzeriaPromotions';
-import { PizzeriaSettings } from './PizzeriaSettings';
+import { PizzariaSidebar } from './PizzariaSidebar';
+import { PizzariaDashboard } from './PizzariaDashboard';
+import { PizzariaOrders } from './PizzariaOrders';
+import { PizzariaMenu } from './PizzariaMenu';
+import { PizzariaCategories } from './PizzariaCategories';
+import { PizzariaPromotions } from './PizzariaPromotions';
+import { PizzariaSettings } from './PizzariaSettings';
 import { audioNotificationService } from '../../services/audioNotificationService';
-import { ordersService } from '../../services/firebaseService';
+import { ordersService } from '../../services/supabaseService';
 import toast from 'react-hot-toast';
 
-export function Pizzeria() {
+export function Pizzaria() {
   const previousOrderIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    // S'abonner aux commandes dès l'arrivée sur l'interface pizzeria
+    // S'abonner aux commandes dès l'arrivée sur l'interface pizzaria
     const unsubscribe = ordersService.subscribeToAllOrders((newOrders) => {
       const currentOrderIds = previousOrderIdsRef.current;
 
@@ -41,15 +41,15 @@ export function Pizzeria() {
 
   return (
     <div className="flex h-full min-h-screen">
-      <PizzeriaSidebar />
+      <PizzariaSidebar />
       <div className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-8">
         <Routes>
-          <Route path="/" element={<Navigate to="/pizzeria/commandes" replace />} />
-          <Route path="commandes" element={<PizzeriaOrders />} />
-          <Route path="menu" element={<PizzeriaMenu />} />
-          <Route path="categorias" element={<PizzeriaCategories />} />
-          <Route path="promocoes" element={<PizzeriaPromotions />} />
-          <Route path="configuracoes" element={<PizzeriaSettings />} />
+          <Route path="/" element={<Navigate to="/pizzaria/commandes" replace />} />
+          <Route path="commandes" element={<PizzariaOrders />} />
+          <Route path="menu" element={<PizzariaMenu />} />
+          <Route path="categorias" element={<PizzariaCategories />} />
+          <Route path="promocoes" element={<PizzariaPromotions />} />
+          <Route path="configuracoes" element={<PizzariaSettings />} />
         </Routes>
       </div>
     </div>

@@ -1,9 +1,9 @@
 import { Pizza } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { usePizzeriaSettings } from '../hooks/usePizzeriaSettings';
+import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 
 export function Footer() {
-  const { settings } = usePizzeriaSettings();
+  const { settings } = usePizzariaSettings();
 
   return (
     <footer className="bg-primary-800 text-white py-8">

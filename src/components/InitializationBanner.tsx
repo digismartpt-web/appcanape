@@ -1,27 +1,25 @@
-import { AlertCircle, CheckCircle, Settings, Database } from 'lucide-react';
+import { AlertCircle, CheckCircle, Database } from 'lucide-react';
 
 interface InitializationBannerProps {
-  firebaseAvailable: boolean;
+  supabaseAvailable: boolean;
   pizzasInitialized: boolean;
-  source: 'firebase' | 'mock';
+  source: 'supabase' | 'mock';
 }
 
 export function InitializationBanner({ 
-  firebaseAvailable, 
+  supabaseAvailable, 
   pizzasInitialized, 
   source 
 }: InitializationBannerProps) {
-  if (firebaseAvailable && pizzasInitialized && source === 'firebase') {
-    return null; // Tout fonctionne parfaitement, pas besoin de banner
+  if (supabaseAvailable && pizzasInitialized && source === 'supabase') {
+    return null; // Everything working, no banner needed
   }
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-400 p-4 mb-6">
       <div className="flex items-start">
         <div className="flex-shrink-0">
-          {!firebaseAvailable ? (
-            <Settings className="h-5 w-5 text-blue-400" />
-          ) : source === 'mock' ? (
+          {!supabaseAvailable ? (
             <AlertCircle className="h-5 w-5 text-yellow-400" />
           ) : (
             <CheckCircle className="h-5 w-5 text-green-400" />
@@ -29,38 +27,35 @@ export function InitializationBanner({
         </div>
         <div className="ml-3">
           <h3 className="text-sm font-medium text-blue-800">
-            {!firebaseAvailable && "Configuration Firebase requise"}
-            {firebaseAvailable && !pizzasInitialized && "Initialisation en cours"}
-            {firebaseAvailable && source === 'mock' && "Mode démonstration"}
+            {!supabaseAvailable && "Supabase non disponível"}
+            {supabaseAvailable && !pizzasInitialized && "Inicialização em curso"}
+            {supabaseAvailable && source === 'mock' && "Modo demonstração"}
           </h3>
           <div className="mt-2 text-sm text-blue-700">
-            {!firebaseAvailable && (
+            {!supabaseAvailable && (
               <div className="space-y-2">
-                <p>Firebase n'est pas configuré. L'application fonctionne en mode démonstration.</p>
+                <p>Supabase não está configurado. A aplicação funciona em modo demonstração.</p>
                 <div className="flex items-center space-x-2">
                   <Database className="h-4 w-4" />
-                  <span>Données : Mock (temporaires)</span>
-                </div>
-                <p className="text-xs">
-                  Pour activer Firebase : configurez votre fichier .env avec vos clés Firebase
-                </p>
-              </div>
-            )}
-            {firebaseAvailable && source === 'mock' && (
-              <div className="space-y-2">
-                <p>Firebase est configuré mais utilise des données de démonstration.</p>
-                <div className="flex items-center space-x-2">
-                  <Database className="h-4 w-4" />
-                  <span>Données : Démonstration</span>
+                  <span>Dados: Mock (temporários)</span>
                 </div>
               </div>
             )}
-            {firebaseAvailable && pizzasInitialized && source === 'firebase' && (
+            {supabaseAvailable && source === 'mock' && (
               <div className="space-y-2">
-                <p>✅ Firebase configuré et opérationnel</p>
+                <p>Supabase configurado mas a usar dados de demonstração.</p>
                 <div className="flex items-center space-x-2">
                   <Database className="h-4 w-4" />
-                  <span>Données : Firebase (temps réel)</span>
+                  <span>Dados: Demonstração</span>
+                </div>
+              </div>
+            )}
+            {supabaseAvailable && pizzasInitialized && source === 'supabase' && (
+              <div className="space-y-2">
+                <p>✅ Supabase configurado e operacional</p>
+                <div className="flex items-center space-x-2">
+                  <Database className="h-4 w-4" />
+                  <span>Dados: Supabase (tempo real)</span>
                 </div>
               </div>
             )}

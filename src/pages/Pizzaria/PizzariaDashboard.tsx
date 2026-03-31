@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, ShoppingBag, TrendingUp, Users, Clock, Package, CheckCircle } from 'lucide-react';
+import { DollarSign, ShoppingBag, TrendingUp, Users, Clock, Package } from 'lucide-react';
 import { useOrderStore } from '../../stores/orderStore';
 
-export function PizzeriaDashboard() {
-  const { orders, subscribeToAllOrders } = useOrderStore();
+export function PizzariaDashboard() {
+  const { orders, initAdminOrdersListener } = useOrderStore();
   const [stats, setStats] = useState({
     total_orders: 0,
     total_revenue: 0,
@@ -13,9 +13,9 @@ export function PizzeriaDashboard() {
   });
 
   useEffect(() => {
-    const unsubscribe = subscribeToAllOrders();
+    const unsubscribe = initAdminOrdersListener();
     return unsubscribe;
-  }, [subscribeToAllOrders]);
+  }, [initAdminOrdersListener]);
 
   useEffect(() => {
     const total_orders = orders.length;

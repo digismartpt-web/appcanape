@@ -3,9 +3,9 @@ import { Search, UserPlus } from 'lucide-react';
 import type { User, UserRole } from '../../types';
 
 const ROLE_LABELS = {
-  admin: 'Administrateur',
-  pizzeria: 'Pizzeria',
-  client: 'Client'
+  admin: 'Administrador',
+  pizzeria: 'Pizzaria',
+  client: 'Cliente'
 };
 
 export function Users() {

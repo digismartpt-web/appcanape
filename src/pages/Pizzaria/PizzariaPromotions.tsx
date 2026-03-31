@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Gift, Image as ImageIcon, Trash2, Check, Upload, Eye } from 'lucide-react';
 import { PromotionsManager } from '../../components/PromotionsManager';
-import { usePizzeriaSettings } from '../../hooks/usePizzeriaSettings';
-import { bannerGalleryService } from '../../services/firebaseService';
+import { usePizzariaSettings } from '../../hooks/usePizzariaSettings';
+import { bannerGalleryService } from '../../services/supabaseService';
 import { useAuth } from '../../hooks/useAuth';
-import { db } from '../../lib/firebase';
 
-export function PizzeriaPromotions() {
-    const { user: authUser } = useAuth();
-    const { settings, updateSettings, loading } = usePizzeriaSettings();
+
+
+export function PizzariaPromotions() {
+    const { settings, updateSettings, loading } = usePizzariaSettings();
     const [gallery, setGallery] = useState<{ id: string; url: string; name: string }[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState('');
@@ -80,7 +80,7 @@ export function PizzeriaPromotions() {
             }
 
             setUploadStatus('A guardar na galeria...');
-            const newId = await bannerGalleryService.addImage(base64String, file.name);
+            await bannerGalleryService.addImage(base64String, file.name);
 
             setUploadStatus('A ativar banner...');
             const success = await updateSettings({
@@ -222,12 +222,14 @@ export function PizzeriaPromotions() {
                                 className="hidden"
                                 accept="image/*"
                                 onChange={handleFileUpload}
+                                title="Escolher ficheiro de imagem"
                             />
 
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isUploading}
                                 className="text-sm bg-accent-500 text-white font-bold px-4 py-2 rounded-md hover:bg-accent-600 flex items-center gap-2 shadow-sm transition-all active:scale-95"
+                                title="Adicionar nova imagem do computador"
                             >
                                 {isUploading ? (
                                     <span className="animate-pulse flex items-center gap-2">
@@ -252,7 +254,7 @@ export function PizzeriaPromotions() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                            {gallery.map((img) => (
+                            {(gallery || []).map((img) => (
                                 <div
                                     key={img.id}
                                     className={`group relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${settings.banner_image_url === img.url

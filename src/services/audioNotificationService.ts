@@ -5,9 +5,9 @@ class AudioNotificationService {
   private isUnlocked: boolean = false;
 
   constructor() {
-    // Charger les préférences depuis localStorage
-    const savedEnabled = localStorage.getItem('pizzeria_audio_enabled');
-    const savedVolume = localStorage.getItem('pizzeria_audio_volume');
+    // Carregar as preferências do localStorage
+    const savedEnabled = localStorage.getItem('pizzaria_audio_enabled');
+    const savedVolume = localStorage.getItem('pizzaria_audio_volume');
 
     if (savedEnabled !== null) {
       this.isEnabled = savedEnabled === 'true';
@@ -31,7 +31,7 @@ class AudioNotificationService {
       this.initAudioContext();
       if (!this.audioContext) return;
 
-      // Créer un buffer silencieux pour débloquer l'audio
+      // Criar um buffer silencioso para desbloquear o áudio
       const buffer = this.audioContext.createBuffer(1, 1, 22050);
       const source = this.audioContext.createBufferSource();
       source.buffer = buffer;
@@ -43,9 +43,9 @@ class AudioNotificationService {
       }
 
       this.isUnlocked = true;
-      console.log('✅ Audio débloqué avec succès');
+      console.log('✅ Áudio desbloqueado com sucesso');
     } catch (error) {
-      console.warn('⚠️ Impossible de débloquer l\'audio automatiquement:', error);
+      console.warn('⚠️ Não foi possível desbloquear o áudio automaticamente:', error);
       this.isUnlocked = false;
     }
   }
@@ -64,7 +64,7 @@ class AudioNotificationService {
 
     const currentTime = this.audioContext.currentTime + delay;
 
-    // Envelope pour un son plus doux
+    // Envelope para um som mais suave
     gainNode.gain.setValueAtTime(0, currentTime);
     gainNode.gain.linearRampToValueAtTime(this.volume * 0.3, currentTime + 0.01);
     gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
@@ -76,7 +76,7 @@ class AudioNotificationService {
   async playNotification() {
     if (!this.isEnabled || !this.isUnlocked) {
       if (!this.isUnlocked) {
-        console.warn('⚠️ Audio non débloqué. Tentative de déblocage...');
+        console.warn('⚠️ Áudio não desbloqueado. A tentar desbloquear...');
         await this.unlockAudio();
         if (!this.isUnlocked) return;
       } else {
@@ -92,18 +92,18 @@ class AudioNotificationService {
         await this.audioContext.resume();
       }
 
-      // Jouer une séquence de 3 notes agréables (comme une notification moderne)
+      // Reproduzir uma sequência de 3 notas agradáveis (como uma notificação moderna)
       await this.playBeep(800, 0.6, 0);      // Note 1
       await this.playBeep(1000, 0.6, 0.6);   // Note 2
       await this.playBeep(1200, 1.0, 1.2);   // Note 3 (plus longue)
     } catch (error) {
-      console.error('❌ Erreur lors de la lecture du son:', error);
+      console.error('❌ Erro ao reproduzir o som:', error);
     }
   }
 
   setEnabled(enabled: boolean) {
     this.isEnabled = enabled;
-    localStorage.setItem('pizzeria_audio_enabled', enabled.toString());
+    localStorage.setItem('pizzaria_audio_enabled', enabled.toString());
   }
 
   getEnabled(): boolean {
@@ -112,7 +112,7 @@ class AudioNotificationService {
 
   setVolume(volume: number) {
     this.volume = Math.max(0, Math.min(1, volume));
-    localStorage.setItem('pizzeria_audio_volume', this.volume.toString());
+    localStorage.setItem('pizzaria_audio_volume', this.volume.toString());
   }
 
   getVolume(): number {

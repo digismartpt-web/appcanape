@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, ShoppingBag, TrendingUp, Users, Save, Key, Download, FileText } from 'lucide-react';
 import { useOrderStore } from '../../stores/orderStore';
-import { usePizzeriaSettings } from '../../hooks/usePizzeriaSettings';
+import { usePizzariaSettings } from '../../hooks/usePizzariaSettings';
 
 export function Dashboard() {
-  const { orders, subscribeToAllOrders } = useOrderStore();
-  const { settings: firestoreSettings, updateSettings } = usePizzeriaSettings();
+  const { orders, initAdminOrdersListener } = useOrderStore();
+  const { settings: firestoreSettings, updateSettings } = usePizzariaSettings();
   const [stats, setStats] = useState({
     total_orders: 0,
     total_revenue: 0,
@@ -17,16 +17,16 @@ export function Dashboard() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeToAllOrders();
+    const unsubscribe = initAdminOrdersListener();
     return unsubscribe;
-  }, [subscribeToAllOrders]);
+  }, [initAdminOrdersListener]);
 
   useEffect(() => {
-    setDeletePassword(firestoreSettings.delete_password || 'delete123');
+    setDeletePassword(firestoreSettings.delete_password || '');
   }, [firestoreSettings]);
 
   useEffect(() => {
-    // Filtrer les commandes pour les 7 derniers jours
+    // Filtrar as encomendas dos últimos 7 dias
     const last7Days = new Date();
     last7Days.setDate(last7Days.getDate() - 7);
 
@@ -36,10 +36,10 @@ export function Dashboard() {
     });
 
     const total_orders = weeklyOrders.length;
-    const total_revenue = weeklyOrders.reduce((sum, order) => sum + order.total, 0);
+    const total_revenue = weeklyOrders.reduce((sum, order) => sum + (order.total || 0), 0);
     const average_order_value = total_orders > 0 ? total_revenue / total_orders : 0;
 
-    // Compter les commandes par statut
+    // Contar as encomendas por estado
     const orders_by_status = weeklyOrders.reduce((acc, order) => {
       acc[order.status] = (acc[order.status] || 0) + 1;
       return acc;
@@ -125,13 +125,13 @@ export function Dashboard() {
         `"${order.user.phone}"`,
         `"${order.user.address}"`,
         order.delivery_type === 'delivery' ? 'Entrega' : 'Levantamento',
-        order.total.toFixed(2),
+        (order.total || 0).toFixed(2),
         order.status,
         (order.delivery_fee || 0).toFixed(2)
       ].join(';'))
     ].join('\n');
 
-    // Création du fichier et téléchargement
+    // Criação do ficheiro e transferência
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -195,7 +195,7 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Résumé des commandes par statut */}
+      {/* Resumo das encomendas por estado */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold text-primary-800 mb-4">
           Resumo de Encomendas (Últimos 7 dias)
@@ -227,7 +227,7 @@ export function Dashboard() {
               const dayOrders = orders.filter(order =>
                 order.created_at.startsWith(dateStr)
               );
-              const dayRevenue = dayOrders.reduce((sum, order) => sum + order.total, 0);
+              const dayRevenue = dayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
               return (
                 <div key={dateStr} className="flex justify-between items-center">
@@ -272,7 +272,7 @@ export function Dashboard() {
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-green-600">
-                    {order.total.toFixed(2)}€
+                    {(order.total || 0).toFixed(2)}€
                   </div>
                   <div className="text-sm text-primary-600">
                     {order.items.length} artigo(s)
@@ -287,7 +287,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Configuration de la senha */}
+      {/* Configuração de Segurança */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold text-primary-800 mb-4 flex items-center">
           <Key className="h-5 w-5 mr-2" />
@@ -313,11 +313,11 @@ export function Dashboard() {
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
-              placeholder="delete123"
+              placeholder="Ex: 1234"
               required
             />
             <p className="text-xs text-primary-500 mt-1">
-              Esta senha será necessária para eliminar todas as encomendas no painel de gestão da pizzaria
+              Esta senha será necessária para eliminar todas as encomendas no painel de gestão da pizzaria.
             </p>
           </div>
           <button
@@ -326,7 +326,7 @@ export function Dashboard() {
             className="flex items-center space-x-2 bg-accent-500 text-white px-6 py-2 rounded-md hover:bg-accent-600 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
             <Save className="h-5 w-5" />
-            <span>{isSaving ? 'A guardar...' : 'Guardar'}</span>
+            <span>{isSaving ? 'A gravar...' : 'Guardar'}</span>
           </button>
         </form>
       </div>

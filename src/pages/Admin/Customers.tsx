@@ -35,13 +35,13 @@ export function Customers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-primary-800">Gestion de la clientèle</h1>
+      <h1 className="text-3xl font-bold text-primary-800">Gestão de Clientes</h1>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-400 h-5 w-5" />
         <input
           type="text"
-          placeholder="Rechercher par nom ou téléphone..."
+          placeholder="Pesquisar por nome ou telefone..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
@@ -53,12 +53,12 @@ export function Customers() {
           <table className="w-full">
             <thead className="bg-primary-50">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Client</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Contact</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Adresse</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Commandes</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Total dépensé</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Dernière commande</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Cliente</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Contacto</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Morada</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Encomendas</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Total Gasto</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Última Encomenda</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-primary-100">
@@ -87,7 +87,7 @@ export function Customers() {
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2 text-sm text-primary-600">
                       <ShoppingBag className="h-4 w-4" />
-                      <span>{customer.total_orders} commandes</span>
+                      <span>{customer.total_orders} {customer.total_orders === 1 ? 'encomenda' : 'encomendas'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -99,7 +99,7 @@ export function Customers() {
                     <div className="flex items-center space-x-2 text-sm text-primary-600">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {new Date(customer.last_order).toLocaleDateString('fr-FR', {
+                        {new Date(customer.last_order).toLocaleDateString('pt-PT', {
                           day: 'numeric',
                           month: 'long',
                           year: 'numeric'

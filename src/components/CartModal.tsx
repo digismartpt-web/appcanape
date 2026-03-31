@@ -3,8 +3,8 @@ import { X, Minus, Plus, ShoppingCart, Truck, Store, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../stores/cartStore';
 import { useAuth } from '../hooks/useAuth';
-import { usePizzeriaSettings } from '../hooks/usePizzeriaSettings';
-import { ordersService } from '../services/firebaseService';
+import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
+import { ordersService } from '../services/supabaseService';
 import { calculateDeliveryTime } from '../services/deliveryTimeService';
 import { checkOpeningHours } from '../services/openingHoursService';
 import { AddressAutocomplete } from './AddressAutocomplete';
@@ -30,7 +30,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     promotions
   } = useCartStore();
   const { user } = useAuth();
-  const { settings } = usePizzeriaSettings();
+  const { settings } = usePizzariaSettings();
   const navigate = useNavigate();
   const [localDeliveryType, setLocalDeliveryType] = useState<DeliveryType>(deliveryType);
   const [localDeliveryAddress, setLocalDeliveryAddress] = useState(deliveryAddress);
@@ -41,7 +41,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     const check = settings.opening_hours ? checkOpeningHours(settings.opening_hours, settings.cutoff_minutes_before_closing) : { isOpen: false, message: 'Horários não configurados' };
     openingHoursCheck = { isOpen: check.isOpen, message: check.message || '' };
   } catch (error) {
-    console.error('Erreur lors de la vérification des horaires dans CartModal:', error);
+    console.error('Erro ao verificar os horários dans CartModal:', error);
   }
   const canOrder = settings.is_open && openingHoursCheck.isOpen;
 
@@ -63,6 +63,12 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    const minDeliveryAmount = 10;
+    if (localDeliveryType === 'delivery' && getTotal() < minDeliveryAmount) {
+      alert(`⚠️ O valor mínimo para entrega é de ${minDeliveryAmount.toFixed(2)}€.\n\nPor favor, adicione mais itens ao seu carrinho ou escolha a opção "Levantar no restaurante".`);
+      return;
+    }
+
     if (!canOrder) {
       if (!settings.is_open) {
         alert('⚠️ O restaurante está fechado no momento. Por favor, volte mais tarde!');
@@ -73,7 +79,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     }
 
     if (localDeliveryType === 'delivery' && !localDeliveryAddress.trim()) {
-      alert('⚠️ Por favor, insira o endereço de entrega!');
+      alert('⚠️ Por favor, insira a morada de entrega!');
       return;
     }
 
@@ -90,7 +96,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
         pizza_category: item.pizza.category,
         size: item.size,
         quantity: item.quantity,
-        price: item.price - (item.discount || 0),
+        price: (item.price - (item.discount || 0)) / item.quantity,
         removed_ingredients: item.removedIngredients,
         extras: item.extras,
         custom_ingredients: item.customIngredients
@@ -109,7 +115,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
           deliveryDistance = estimate.distance;
 
           if (settings.max_delivery_distance && settings.max_delivery_distance > 0 && deliveryDistance > settings.max_delivery_distance) {
-            alert(`⚠️ Desculpe, não conseguimos entregar neste endereço!\n\nDistância: ${deliveryDistance.toFixed(1)} km\nDistância máxima: ${settings.max_delivery_distance} km\n\nNo entanto, pode vir levantar a sua encomenda ao nosso restaurante.`);
+            alert(`⚠️ Desculpe, não conseguimos entregar nesta morada!\n\nDistância: ${deliveryDistance.toFixed(1)} km\nDistância máxima: ${settings.max_delivery_distance} km\n\nNo entanto, pode vir levantar a sua encomenda ao nosso restaurante.`);
             setIsSubmitting(false); // On débloque le bouton
             return;
           }
@@ -149,28 +155,36 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
         commission_total: commissionTotal,
         estimated_time: estimatedTime,
         delivery_distance: deliveryDistance,
-        status: 'en_attente' as const
+        status: 'pendente_pagamento' as const
       };
 
-      await ordersService.createOrder(orderData);
+      const orderId = await ordersService.createOrder(orderData);
 
-      clearCart();
-      onClose();
-
-      if (localDeliveryType === 'delivery') {
-        alert('✅ Pedido criado com sucesso!\n\n⚠️ IMPORTANTE: A pizzeria irá propor um horário de entrega. Você deve confirmar este horário para que o pedido seja processado. Caso contrário, a encomenda não será aceite.');
+      // Novo: Criar sessão do Stripe e redirecionar para pagamento
+      const session = await ordersService.createStripeSession(orderId, orderItems, user.email);
+      
+      if (session && session.url) {
+        clearCart();
+        window.location.href = session.url;
+      } else {
+        throw new Error('Não foi possível gerar o link de pagamento');
       }
 
-      navigate('/mes-commandes');
     } catch (error: any) {
-      console.error('Erreur lors de la commande:', error);
-      alert(`Erro ao fazer o pedido. Por favor, tente novamente.\n\nDetalhes: ${error.message || 'Erro desconhecido'}`);
+      console.error('Erro na encomenda:', error);
+      alert(`Erro ao fazer a encomenda. Por favor, tente novamente.\n\nDetalhes: ${error.message || 'Erro de rede'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeliveryTypeChange = (type: DeliveryType) => {
+    const minDeliveryAmount = 10;
+    if (type === 'delivery' && getTotal() < minDeliveryAmount) {
+      alert(`⚠️ Atenção: O valor mínimo do pedido para entrega ao domicílio é de ${minDeliveryAmount.toFixed(2)}€.\n\nAtualmente o seu carrinho é de ${getTotal().toFixed(2)}€.`);
+      return;
+    }
+    
     setLocalDeliveryType(type);
     if (type === 'pickup') {
       setLocalDeliveryAddress('');
@@ -309,7 +323,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                       }`}
                   >
                     <Store className="w-6 h-6 mx-auto mb-2" />
-                    <p className="font-medium">Recolher</p>
+                    <p className="font-medium">Levantar</p>
                     <p className="text-xs text-gray-600 mt-1">No restaurante</p>
                   </button>
 
@@ -322,20 +336,25 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                   >
                     <Truck className="w-6 h-6 mx-auto mb-2" />
                     <p className="font-medium">Entrega</p>
-                    <p className="text-xs text-gray-600 mt-1">No seu endereço</p>
+                    <p className="text-xs text-gray-600 mt-1">Na sua morada</p>
                   </button>
                 </div>
 
                 {localDeliveryType === 'delivery' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Endereço de Entrega *
+                      Morada de Entrega *
                     </label>
                     <AddressAutocomplete
                       value={localDeliveryAddress}
                       onChange={setLocalDeliveryAddress}
-                      placeholder="Comece a escrever o seu endereço..."
+                      placeholder="Comece a escrever a sua morada..."
                     />
+                    {getTotal() < 10 && (
+                      <p className="mt-2 text-xs font-bold text-red-600 animate-pulse">
+                        ⚠️ O valor mínimo para entrega é de 10,00€. Adicione mais { (10 - getTotal()).toFixed(2) }€ em produtos.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -451,12 +470,12 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                 {isSubmitting ? (
                   <>
                     <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Processando...
+                    A processar...
                   </>
                 ) : !canOrder ? (
                   'Restaurante Fechado'
                 ) : (
-                  'Finalizar Pedido'
+                  'Pagar Online'
                 )}
               </button>
             </div>

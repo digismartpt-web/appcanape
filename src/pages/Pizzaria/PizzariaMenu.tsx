@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, CreditCard as Edit2, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
-import { pizzasService } from '../../services/firebaseService';
-import { extrasService } from '../../services/firebaseService';
-import { InitializationService } from '../../services/initializationService';
-import { usePizzeriaCategories } from '../../hooks/usePizzeriaCategories';
-import { MOCK_PIZZAS } from '../../data/mockData';
+import { pizzasService, extrasService } from '../../services/supabaseService';
+import { usePizzasStore } from '../../stores/pizzasStore';
+import { usePizzariaCategories } from '../../hooks/usePizzariaCategories';
 import type { Pizza, Extra } from '../../types';
 
 interface PizzaFormData {
@@ -53,35 +51,29 @@ const initialFormData: PizzaFormData = {
   custom_ingredients: []
 };
 
-export function PizzeriaMenu() {
-  const [pizzas, setPizzas] = useState<Pizza[]>([]);
-  const [extras, setExtras] = useState<Extra[]>([]);
-  const { activeCategories } = usePizzeriaCategories();
-  const [loading, setLoading] = useState(true);
+export function PizzariaMenu() {
+  const { allPizzas: pizzas, allExtras: extras, loading } = usePizzasStore();
+  const { activeCategories } = usePizzariaCategories();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const pizzasPerPage = 8;
   const [showModal, setShowModal] = useState(false);
-  const [showInitModal, setShowInitModal] = useState(false);
   const [editingPizza, setEditingPizza] = useState<Pizza | null>(null);
   const [formData, setFormData] = useState<PizzaFormData>(initialFormData);
-  const [isInitializing, setIsInitializing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [showExtrasModal, setShowExtrasModal] = useState(false);
   const [showExtraFormModal, setShowExtraFormModal] = useState(false);
   const [editingExtra, setEditingExtra] = useState<Extra | null>(null);
   const [extraFormData, setExtraFormData] = useState<ExtraFormData>({ name: '', price: 0, active: true });
-  const [loadingExtras, setLoadingExtras] = useState(false);
 
   // Helper functions for 10% markup (apply to pizzas only)
   const applyMarkup = (price: number) => Math.round(price * 1.1 * 100) / 100;
   const removeMarkup = (price: number) => Math.round((price / 1.1) * 100) / 100;
 
-  // Écouter les changements de catégories
+  // Ouvir as mudanças de categorias
   useEffect(() => {
     const handleCategoriesUpdate = () => {
-      // Forcer le re-render quand les catégories changent
+      // Forçar o re-render quando as categorias mudam
       setFormData(prev => ({ ...prev }));
     };
 
@@ -89,83 +81,14 @@ export function PizzeriaMenu() {
     return () => window.removeEventListener('categoriesUpdated', handleCategoriesUpdate);
   }, []);
 
-  // Charger les pizzas au démarrage
-  useEffect(() => {
-    loadPizzas();
-
-    // S'abonner aux mises à jour temps réel si Firebase est disponible
-    let unsubscribe = () => { };
-    const setupRealtimeUpdates = async () => {
-      const initState = await InitializationService.autoInitialize();
-      if (initState.source === 'firebase' && initState.firebaseAvailable) {
-        unsubscribe = pizzasService.subscribeToAllPizzas((updatedPizzas) => {
-          if (updatedPizzas.length > 0) {
-            setPizzas(updatedPizzas);
-          }
-        });
-      }
-    };
-
-    setupRealtimeUpdates();
-
-    return () => unsubscribe();
-  }, []);
-
-  // S'abonner aux extras en temps réel
-  useEffect(() => {
-    setLoadingExtras(true);
-
-    let unsubscribe = () => { };
-    const setupRealtimeExtras = async () => {
-      const initState = await InitializationService.autoInitialize();
-      if (initState.source === 'firebase' && initState.firebaseAvailable) {
-        unsubscribe = extrasService.subscribeToAllExtras((updatedExtras) => {
-          setExtras(updatedExtras);
-          setLoadingExtras(false);
-        });
-      } else {
-        setExtras([]);
-        setLoadingExtras(false);
-      }
-    };
-
-    setupRealtimeExtras();
-
-    return () => unsubscribe();
-  }, []);
-
-  const loadPizzas = async () => {
-    setLoading(true);
-    try {
-      const initState = await InitializationService.autoInitialize();
-
-      if (initState.source === 'firebase' && initState.firebaseAvailable) {
-        try {
-          const firebasePizzas = await pizzasService.getAllPizzasForAdmin();
-          setPizzas(firebasePizzas);
-        } catch (error) {
-          console.warn('Erreur Firebase:', error);
-          setPizzas([]);
-        }
-      } else {
-        setPizzas([]);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des pizzas:', error);
-      setPizzas([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
-    console.log('🍕 Début de soumission du formulaire');
-    console.log('📝 Données du formulaire:', formData);
+    console.log('🍕 Início da submissão do formulário');
+    console.log('📝 Dados do formulário:', formData);
 
-    // Vérifier si au moins un prix est défini (prix unique ou une taille)
+    // Verificar se pelo menos um preço está definido (preço único ou um tamanho)
     const hasUniquePrice = formData.has_unique_price && formData.unique_price && formData.unique_price > 0;
     const hasSizePrice = (!formData.has_unique_price) && (
       (formData.prices.small > 0) ||
@@ -173,18 +96,18 @@ export function PizzeriaMenu() {
       (formData.prices.large > 0)
     );
 
-    console.log('💰 Validation des prix:', { hasUniquePrice, hasSizePrice, prices: formData.prices });
+    console.log('💰 Validação dos preços:', { hasUniquePrice, hasSizePrice, prices: formData.prices });
 
     if (!hasUniquePrice && !hasSizePrice) {
-      console.log('❌ Échec de validation: aucun prix défini');
+      console.log('❌ Falha na validação: nenhum preço definido');
       alert('⚠️ Atenção: Deve definir pelo menos um preço (preço único ou pelo menos um tamanho).');
       setIsSaving(false);
       return;
     }
 
-    console.log('✅ Validation OK, sauvegarde en cours...');
+    console.log('✅ Validação OK, gravação em curso...');
 
-    // Appliquer le markup de 10% uniquement pour les pizzas
+    // Aplicar a margem de 10% apenas para as pizzas
     const markedUpFormData = {
       ...formData,
       unique_price: formData.unique_price ? applyMarkup(formData.unique_price) : undefined,
@@ -196,58 +119,36 @@ export function PizzeriaMenu() {
     };
 
     try {
-      if (InitializationService.isFirebaseAvailable()) {
-        console.log('🔥 Firebase disponible, sauvegarde dans Firebase...');
-        if (editingPizza) {
-          // Modifier une pizza existante
-          console.log('📝 Modification de la pizza:', editingPizza.id);
-          await pizzasService.updatePizza(editingPizza.id, markedUpFormData);
-        } else {
-          // Créer une nouvelle pizza
-          console.log('➕ Création d\'une nouvelle pizza');
-          const newId = await pizzasService.createPizza(markedUpFormData);
-          console.log('✅ Pizza créée avec ID:', newId);
-        }
-        // Recharger les pizzas
-        console.log('🔄 Rechargement des pizzas...');
-        await loadPizzas();
+      console.log('💾 A gravar pizza no Supabase...');
+      if (editingPizza) {
+        console.log('📝 Modificando a pizza:', editingPizza.id);
+        await pizzasService.updatePizza(editingPizza.id, markedUpFormData);
       } else {
-        console.log('💾 Mode mock, sauvegarde locale...');
-        // Mode mock - simuler l'ajout/modification
-        if (editingPizza) {
-          setPizzas(prev => prev.map(p =>
-            p.id === editingPizza.id
-              ? { ...p, ...markedUpFormData }
-              : p
-          ));
-        } else {
-          const newPizza: Pizza = {
-            id: Date.now().toString(),
-            ...markedUpFormData
-          };
-          setPizzas(prev => [...prev, newPizza]);
-        }
+        console.log('➕ Criando nova pizza');
+        const newId = await pizzasService.createPizza(markedUpFormData);
+        console.log('✅ Pizza criada com ID:', newId);
       }
+      // Não é necessário recarregar manualmente, o Realtime atualizará o store
 
-      console.log('✅ Sauvegarde réussie, fermeture du modal');
+      console.log('✅ Gravação concluída com sucesso, a fechar o modal');
       setShowModal(false);
       setEditingPizza(null);
       setFormData(initialFormData);
     } catch (error) {
-      console.error('❌ Erreur lors de la sauvegarde:', error);
+      console.error('❌ Erro ao guardar:', error);
       alert('Erro ao guardar a pizza: ' + (error as Error).message);
     } finally {
       setIsSaving(false);
-      console.log('🏁 Fin de la soumission');
+      console.log('🏁 Fim da submissão');
     }
   };
 
   const handleEdit = (pizza: Pizza) => {
     setEditingPizza(pizza);
     setFormData({
-      name: pizza.name,
-      description: pizza.description,
-      image_url: pizza.image_url,
+      name: pizza.name || '',
+      description: pizza.description || '',
+      image_url: pizza.image_url || '',
       prices: {
         small: pizza.prices.small ? removeMarkup(pizza.prices.small) : 0,
         medium: pizza.prices.medium ? removeMarkup(pizza.prices.medium) : 0,
@@ -255,9 +156,9 @@ export function PizzeriaMenu() {
       },
       has_unique_price: pizza.has_unique_price || false,
       unique_price: pizza.unique_price ? removeMarkup(pizza.unique_price) : undefined,
-      ingredients: pizza.ingredients,
-      category: pizza.category,
-      vegetarian: pizza.vegetarian,
+      ingredients: pizza.ingredients || [],
+      category: pizza.category || 'Outros',
+      vegetarian: pizza.vegetarian || false,
       active: true,
       customizable: pizza.customizable || false,
       max_custom_ingredients: pizza.max_custom_ingredients || 3,
@@ -270,16 +171,11 @@ export function PizzeriaMenu() {
     if (!confirm(`Tem a certeza que deseja eliminar "${pizza.name}"?`)) {
       return;
     }
-
     try {
-      if (InitializationService.isFirebaseAvailable()) {
-        await pizzasService.deletePizza(pizza.id);
-        await loadPizzas();
-      } else {
-        setPizzas(prev => prev.filter(p => p.id !== pizza.id));
-      }
+      await pizzasService.deletePizza(pizza.id);
+      // Não é necessário recarregar manualmente
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
+      console.error('Erro ao apagar:', error);
       alert('Erro ao eliminar a pizza');
     }
   };
@@ -288,111 +184,11 @@ export function PizzeriaMenu() {
     try {
       const currentActiveState = (pizza as any).active ?? true;
       const newActiveState = !currentActiveState;
-
-      if (InitializationService.isFirebaseAvailable()) {
-        await pizzasService.updatePizza(pizza.id, { active: newActiveState });
-        await loadPizzas();
-      } else {
-        setPizzas(prev => prev.map(p =>
-          p.id === pizza.id
-            ? { ...p, active: newActiveState } as Pizza
-            : p
-        ));
-      }
+      await pizzasService.updatePizza(pizza.id, { active: newActiveState });
+      // Não é necessário recarregar manualmente
     } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
+      console.error('Erro na atualização:', error);
       alert('Erro ao atualizar a pizza');
-    }
-  };
-
-  const handleInitializePizzas = async () => {
-    setIsInitializing(true);
-    try {
-      const success = await InitializationService.initializePizzasInFirebase();
-      if (success) {
-        alert('✅ Pizzas de demonstração adicionadas com sucesso!');
-        setShowInitModal(false);
-        await loadPizzas();
-      } else {
-        alert('❌ Erro ao adicionar as pizzas');
-      }
-    } catch (error) {
-      alert('❌ Erro: ' + (error as Error).message);
-    } finally {
-      setIsInitializing(false);
-    }
-  };
-
-  const handleSyncToFirebase = async () => {
-    if (!InitializationService.isFirebaseAvailable()) {
-      alert('❌ Firebase não está disponível');
-      return;
-    }
-
-    if (!confirm('Deseja sincronizar todas as pizzas atuais para o Firebase? Esta ação adicionará as pizzas em falta.')) {
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
-      console.log('🔄 Début de la synchronisation...');
-      console.log('📊 Pizzas à synchroniser:', pizzas.length);
-
-      let syncedCount = 0;
-      let errorCount = 0;
-
-      for (const pizza of pizzas) {
-        try {
-          console.log(`🍕 Synchronisation de: ${pizza.name}`);
-
-          // Créer la pizza dans Firebase
-          const pizzaData = {
-            name: pizza.name,
-            description: pizza.description,
-            image_url: pizza.image_url,
-            prices: pizza.prices,
-            ingredients: pizza.ingredients,
-            category: pizza.category,
-            vegetarian: pizza.vegetarian,
-            active: (pizza as any).active !== false
-          };
-
-          console.log('📝 Données pizza:', pizzaData);
-
-          const newPizzaId = await pizzasService.createPizza(pizzaData);
-          console.log(`✅ Pizza créée avec ID: ${newPizzaId}`);
-          syncedCount++;
-        } catch (error: any) {
-          console.error(`❌ Erreur lors de la sync de ${pizza.name}:`, error);
-
-          // Si c'est une erreur de permissions, arrêter la synchronisation
-          if (error.message.includes('Permissions insuffisantes') || error.message.includes('Profil utilisateur')) {
-            alert(`❌ Erro de permissões: ${error.message}\n\nVerifique o seu papel na Firebase Console:\n1. Vá para Firestore Database > Coleção "users"\n2. Encontre o seu documento de utilizador\n3. Verifique se o campo "role" está definido como "pizzeria"`);
-            setIsSyncing(false);
-            return;
-          }
-
-          errorCount++;
-        }
-      }
-
-      console.log(`📊 Résultat: ${syncedCount} succès, ${errorCount} erreurs`);
-
-      if (syncedCount > 0) {
-        alert(`✅ Sincronização concluída! ${syncedCount} pizzas sincronizadas para o Firebase.`);
-      } else if (errorCount > 0) {
-        alert(`❌ Erro ao sincronizar. ${errorCount} pizzas não puderam ser sincronizadas. Verifique a consola para mais detalhes.`);
-      } else {
-        alert(`ℹ️ Nenhuma pizza para sincronizar (todas já existem ou outro problema).`);
-      }
-
-      // Recharger les pizzas depuis Firebase
-      await loadPizzas();
-    } catch (error) {
-      console.error('Erreur lors de la synchronisation:', error);
-      alert('❌ Erro ao sincronizar: ' + (error as Error).message);
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -400,42 +196,23 @@ export function PizzeriaMenu() {
     e.preventDefault();
     setIsSaving(true);
 
-    // Appliquer le markup de 10% aos extras
     const markedUpExtraData = {
       ...extraFormData,
       price: applyMarkup(extraFormData.price)
     };
 
     try {
-      if (InitializationService.isFirebaseAvailable()) {
-        if (editingExtra) {
-          await extrasService.updateExtra(editingExtra.id, markedUpExtraData);
-        } else {
-          await extrasService.createExtra(markedUpExtraData);
-        }
-        // Pas besoin de recharger, la subscription temps réel le fera
+      if (editingExtra) {
+        await extrasService.updateExtra(editingExtra.id, markedUpExtraData);
       } else {
-        // Mode mock
-        if (editingExtra) {
-          setExtras(prev => prev.map(e =>
-            e.id === editingExtra.id
-              ? { ...e, ...markedUpExtraData }
-              : e
-          ));
-        } else {
-          const newExtra: Extra = {
-            id: Date.now().toString(),
-            ...markedUpExtraData
-          };
-          setExtras(prev => [...prev, newExtra]);
-        }
+        await extrasService.createExtra(markedUpExtraData);
       }
-
+      // Não é necessário recarregar, a subscrição em tempo real tratará disso
       setShowExtraFormModal(false);
       setEditingExtra(null);
       setExtraFormData({ name: '', price: 0, active: true });
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde de l\'extra:', error);
+      console.error('Erro ao guardar o extra:', error);
       alert('Erro ao guardar o extra');
     } finally {
       setIsSaving(false);
@@ -455,19 +232,9 @@ export function PizzeriaMenu() {
   const handleToggleExtraActive = async (extra: Extra) => {
     try {
       const newActiveState = !((extra as any).active !== false);
-
-      if (InitializationService.isFirebaseAvailable()) {
-        await extrasService.updateExtra(extra.id, { active: newActiveState });
-        // Pas besoin de recharger, la subscription temps réel le fera
-      } else {
-        setExtras(prev => prev.map(e =>
-          e.id === extra.id
-            ? { ...e, active: newActiveState }
-            : e
-        ));
-      }
+      await extrasService.updateExtra(extra.id, { active: newActiveState });
     } catch (error) {
-      console.error('Erreur lors du changement de statut de l\'extra:', error);
+      console.error('Erro ao mudar o estado do extra:', error);
       alert('Erro ao alterar o estado do extra');
     }
   };
@@ -476,62 +243,57 @@ export function PizzeriaMenu() {
     if (!confirm(`Tem a certeza que deseja eliminar "${extra.name}"?`)) {
       return;
     }
-
     try {
-      if (InitializationService.isFirebaseAvailable()) {
-        await extrasService.deleteExtra(extra.id);
-        // Pas besoin de recharger, la subscription temps réel le fera
-      } else {
-        setExtras(prev => prev.filter(e => e.id !== extra.id));
-      }
+      await extrasService.deleteExtra(extra.id);
     } catch (error) {
-      console.error('Erreur lors de la suppression de l\'extra:', error);
+      console.error('Erro ao apagar o extra:', error);
       alert('Erro ao eliminar o extra');
     }
   };
 
-  // Filtrer et trier les pizzas
+  // Filtrar e ordenar as pizzas
   const filteredAndSortedPizzas = [...pizzas]
     .filter(pizza => {
       if (selectedCategory === 'all') return true;
-      return pizza.category.toLowerCase() === selectedCategory.toLowerCase();
+      const pizzaCategory = pizza.category || 'Outros';
+      return pizzaCategory.toLowerCase() === selectedCategory.toLowerCase();
     })
     .sort((a, b) => {
-      // D'abord par catégorie
-      const categoryCompare = a.category.localeCompare(b.category);
+      // Primeiro por categoria
+      const categoryCompare = (a.category || '').localeCompare(b.category || '');
       if (categoryCompare !== 0) return categoryCompare;
-      // Puis par nom alphabétique
-      return a.name.localeCompare(b.name);
+      // Depois por nome alfabético
+      return (a.name || '').localeCompare(b.name || '');
     });
 
-  // Calculer les pizzas pour la page actuelle
+  // Calcular as pizzas para a página atual
   const indexOfLastPizza = currentPage * pizzasPerPage;
   const indexOfFirstPizza = indexOfLastPizza - pizzasPerPage;
   const currentPizzas = filteredAndSortedPizzas.slice(indexOfFirstPizza, indexOfLastPizza);
   const totalPages = Math.ceil(filteredAndSortedPizzas.length / pizzasPerPage);
 
-  // Réinitialiser à la page 1 uniquement quand le filtre change et scroller en haut
+  // Repor para a página 1 apenas quando o filtro muda e fazer scroll para cima
   useEffect(() => {
     setCurrentPage(1);
     window.scrollTo(0, 0);
   }, [selectedCategory]);
 
-  // Scroller en haut quand la page change
+  // Fazer scroll para cima quando a página muda
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentPage]);
 
-  // Obtenir les catégories disponibles
+  // Obter as categorias disponíveis
   const availableCategories = activeCategories.length > 0
     ? activeCategories.map(cat => cat.name)
-    : [...new Set(pizzas.map(pizza => pizza.category))];
+    : [...new Set(pizzas.map(pizza => pizza.category || 'Outros'))];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-800 mx-auto mb-4"></div>
-          <p className="text-primary-600">Chargement des pizzas...</p>
+          <p className="text-primary-600">A carregar o menu de pizzas...</p>
         </div>
       </div>
     );
@@ -623,7 +385,7 @@ export function PizzeriaMenu() {
         </div>
       </div>
 
-      {/* Liste des pizzas */}
+      {/* Lista de pizzas */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         {filteredAndSortedPizzas.length > pizzasPerPage && (
           <div className="px-6 py-4 border-b bg-gray-50">
@@ -666,7 +428,7 @@ export function PizzeriaMenu() {
             </thead>
             <tbody className="divide-y divide-primary-100">
               {currentPizzas.map((pizza, index) => {
-                // Vérifier si c'est la première pizza d'une nouvelle catégorie
+                // Verificar se é a primeira pizza de uma nova categoria
                 const isFirstInCategory = index === 0 ||
                   currentPizzas[index - 1].category !== pizza.category;
 
@@ -699,13 +461,13 @@ export function PizzeriaMenu() {
                       {pizza.has_unique_price ? (
                         <div>
                           <span className="font-medium">Preço Único: </span>
-                          {pizza.unique_price?.toFixed(2)}€
+                          {(pizza.unique_price || 0).toFixed(2)}€
                         </div>
                       ) : (
                         <>
-                          <div>P: {pizza.prices.small.toFixed(2)}€</div>
-                          <div>M: {pizza.prices.medium.toFixed(2)}€</div>
-                          <div>G: {pizza.prices.large.toFixed(2)}€</div>
+                          <div>P: {(pizza.prices.small || 0).toFixed(2)}€</div>
+                          <div>M: {(pizza.prices.medium || 0).toFixed(2)}€</div>
+                          <div>G: {(pizza.prices.large || 0).toFixed(2)}€</div>
                         </>
                       )}
                     </td>
@@ -763,7 +525,7 @@ export function PizzeriaMenu() {
                 ← Anterior
               </button>
 
-              {/* Numéros de pages */}
+              {/* Números de páginas */}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
                 <button
                   key={pageNumber}
@@ -818,7 +580,7 @@ export function PizzeriaMenu() {
       }
 
 
-      {/* Modal de gestion des extras */}
+      {/* Modal de gestão de extras */}
       {
         showExtrasModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -882,7 +644,7 @@ export function PizzeriaMenu() {
                               {extra.name}
                             </td>
                             <td className="px-6 py-4 text-sm text-primary-600">
-                              {extra.price.toFixed(2)}€
+                              {(extra.price || 0).toFixed(2)}€
                             </td>
                             <td className="px-6 py-4">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(extra as any).active !== false
@@ -1204,29 +966,33 @@ export function PizzeriaMenu() {
                       Ingredientes
                     </label>
                     <div className="space-y-3">
-                      {/* Liste des ingrédients actuels */}
-                      <div className="flex flex-wrap gap-2">
-                        {formData.ingredients.map((ingredient, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-accent-100 text-accent-800"
-                          >
-                            {ingredient}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newIngredients = formData.ingredients.filter((_, i) => i !== index);
-                                setFormData({ ...formData, ingredients: newIngredients });
-                              }}
-                              className="ml-2 text-accent-600 hover:text-accent-800"
+                      {/* Lista de ingredientes atuais */}
+                      {(formData.ingredients || []).length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {(formData.ingredients || []).map((ingredient, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-accent-100 text-accent-800"
                             >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
+                              {ingredient}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newIngredients = (formData.ingredients || []).filter((_, i) => i !== index);
+                                  setFormData({ ...formData, ingredients: newIngredients });
+                                }}
+                                className="ml-2 text-accent-600 hover:text-accent-800"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-primary-500 italic">Nenhum ingrediente adicionado.</p>
+                      )}
 
-                      {/* Champ pour ajouter un nouvel ingrédient */}
+                      {/* Campo para adicionar um novo ingrediente */}
                       <div className="flex gap-2">
                         <input
                           type="text"
@@ -1238,10 +1004,10 @@ export function PizzeriaMenu() {
                               e.preventDefault();
                               const input = e.target as HTMLInputElement;
                               const newIngredient = input.value.trim();
-                              if (newIngredient && !formData.ingredients.includes(newIngredient)) {
+                              if (newIngredient && !(formData.ingredients || []).includes(newIngredient)) {
                                 setFormData({
                                   ...formData,
-                                  ingredients: [...formData.ingredients, newIngredient]
+                                  ingredients: [...(formData.ingredients || []), newIngredient]
                                 });
                                 input.value = '';
                               }
@@ -1253,10 +1019,10 @@ export function PizzeriaMenu() {
                           onClick={() => {
                             const input = document.getElementById('newIngredient') as HTMLInputElement;
                             const newIngredient = input.value.trim();
-                            if (newIngredient && !formData.ingredients.includes(newIngredient)) {
+                            if (newIngredient && !(formData.ingredients || []).includes(newIngredient)) {
                               setFormData({
                                 ...formData,
-                                ingredients: [...formData.ingredients, newIngredient]
+                                ingredients: [...(formData.ingredients || []), newIngredient]
                               });
                               input.value = '';
                             }
@@ -1344,26 +1110,30 @@ export function PizzeriaMenu() {
                             Ingredientes disponíveis para personalização
                           </label>
                           <div className="space-y-3">
-                            <div className="flex flex-wrap gap-2">
-                              {formData.custom_ingredients.map((ingredient, index) => (
-                                <span
-                                  key={index}
-                                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
-                                >
-                                  {ingredient}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newIngredients = formData.custom_ingredients.filter((_, i) => i !== index);
-                                      setFormData({ ...formData, custom_ingredients: newIngredients });
-                                    }}
-                                    className="ml-2 text-green-600 hover:text-green-800"
+                            {(formData.custom_ingredients || []).length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {(formData.custom_ingredients || []).map((ingredient, index) => (
+                                  <span
+                                    key={index}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
                                   >
-                                    ×
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
+                                    {ingredient}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newIngredients = (formData.custom_ingredients || []).filter((_, i) => i !== index);
+                                        setFormData({ ...formData, custom_ingredients: newIngredients });
+                                      }}
+                                      className="ml-2 text-green-600 hover:text-green-800"
+                                    >
+                                      ×
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-primary-500 italic">Nenhum ingrediente personalizável adicionado.</p>
+                            )}
 
                             <div className="flex gap-2">
                               <input

@@ -1,7 +1,7 @@
-import { usePizzeriaSettings } from '../hooks/usePizzeriaSettings';
+import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 
 export function Privacy() {
-  const { settings } = usePizzeriaSettings();
+  const { settings } = usePizzariaSettings();
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -79,7 +79,7 @@ export function Privacy() {
         <section>
           <h2 className="text-xl font-semibold text-primary-800 mb-4">ARTIGO 7: MANUTENÇÃO E DISPONIBILIDADE</h2>
           <p className="text-primary-600">
-            A Aplicação está acessível 24h/24h, salvo períodos de manutenção ou avarias nos alojadores terceiros (Firebase, Google, Hostinger, Coolify etc.).
+            A Aplicação está acessível 24h/24h, salvo períodos de manutenção ou avarias nos alojadores terceiros (Supabase, Google, Hostinger, Coolify etc.).
             O Prestador não poderá ser responsabilizado por qualquer perda de exploração ou lucros cessantes resultantes de uma interrupção temporária do serviço, qualquer que seja a sua duração.
           </p>
         </section>

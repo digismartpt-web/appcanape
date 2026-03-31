@@ -1,8 +1,8 @@
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
-import { usePizzeriaSettings } from '../hooks/usePizzeriaSettings';
+import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 
 export function Home() {
-  const { settings, loading } = usePizzeriaSettings();
+  const { settings, loading } = usePizzariaSettings();
 
   if (loading) {
     return (
@@ -33,7 +33,7 @@ export function Home() {
               />
             </div>
           )}
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-1">{settings.name || 'Pizzeria'}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-1">{settings.name || 'Pizzaria'}</h1>
           <p className="text-sm sm:text-base text-gray-600">Contacto</p>
         </div>
       </div>
