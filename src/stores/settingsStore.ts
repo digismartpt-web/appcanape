@@ -20,6 +20,7 @@ const defaultSettings: PizzariaSettings = {
   email: '',
   is_open: true,
   delivery_fee: 0,
+  min_delivery_amount: 10,
   default_preparation_time: 10,
   default_delivery_time: 30,
   cutoff_minutes_before_closing: 30,

@@ -279,6 +279,27 @@ export function PizzariaSettings() {
           </div>
 
           <div className="mt-4">
+            <label htmlFor="min-delivery-amount" className="block text-sm font-medium text-primary-700 mb-2">
+              Valor Mínimo para Entrega (€)
+            </label>
+            <input
+              type="number"
+              id="min-delivery-amount"
+              name="min-delivery-amount"
+              value={settings.min_delivery_amount ?? ''}
+              onChange={(e) => updateField('min_delivery_amount', e.target.value ? Number(e.target.value) : 0)}
+              className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
+              placeholder="Ex: 10"
+              min="0"
+              step="0.5"
+              title="Valor mínimo do carrinho para permitir entrega"
+            />
+            <p className="text-xs text-primary-500 mt-1">
+              Valor mínimo em produtos que o cliente deve atingir para poder escolher a opção de entrega.
+            </p>
+          </div>
+
+          <div className="mt-4">
             <label htmlFor="delivery-fee" className="block text-sm font-medium text-primary-700 mb-2">
               Custo de Entrega (€)
             </label>

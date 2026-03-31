@@ -9,6 +9,7 @@ export interface PizzariaSettings {
   delete_password?: string;
   is_open: boolean;
   max_delivery_distance?: number;
+  min_delivery_amount?: number;
   delivery_fee?: number;
   default_preparation_time?: number;
   default_delivery_time?: number;

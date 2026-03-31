@@ -5,7 +5,12 @@ import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 import { ordersService } from '../services/supabaseService';
 import type { Order } from '../types';
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+  pendente_pagamento: {
+    label: 'A aguardar pagamento',
+    color: 'bg-gray-100 text-gray-800',
+    icon: Clock
+  },
   en_attente: {
     label: 'Em espera',
     color: 'bg-yellow-100 text-yellow-800',
@@ -455,7 +460,13 @@ export default function MesCommandes() {
                   </div>
 
                   {/* Total */}
-                  <div className="border-t pt-4">
+                  <div className="border-t pt-4 space-y-2">
+                    {selectedOrder.delivery_type === 'delivery' && selectedOrder.delivery_fee && selectedOrder.delivery_fee > 0 ? (
+                      <div className="flex justify-between items-center text-sm text-gray-600">
+                        <span>Taxa de entrega</span>
+                        <span>{formatPrice(selectedOrder.delivery_fee)}</span>
+                      </div>
+                    ) : null}
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-medium text-gray-900">Total</span>
                       <span className="text-lg font-semibold text-gray-900">

@@ -63,7 +63,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    const minDeliveryAmount = 10;
+    const minDeliveryAmount = settings.min_delivery_amount || 10;
     if (localDeliveryType === 'delivery' && getTotal() < minDeliveryAmount) {
       alert(`⚠️ O valor mínimo para entrega é de ${minDeliveryAmount.toFixed(2)}€.\n\nPor favor, adicione mais itens ao seu carrinho ou escolha a opção "Levantar no restaurante".`);
       return;
@@ -179,7 +179,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleDeliveryTypeChange = (type: DeliveryType) => {
-    const minDeliveryAmount = 10;
+    const minDeliveryAmount = settings.min_delivery_amount || 10;
     if (type === 'delivery' && getTotal() < minDeliveryAmount) {
       alert(`⚠️ Atenção: O valor mínimo do pedido para entrega ao domicílio é de ${minDeliveryAmount.toFixed(2)}€.\n\nAtualmente o seu carrinho é de ${getTotal().toFixed(2)}€.`);
       return;
@@ -350,9 +350,9 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                       onChange={setLocalDeliveryAddress}
                       placeholder="Comece a escrever a sua morada..."
                     />
-                    {getTotal() < 10 && (
+                    {getTotal() < (settings.min_delivery_amount || 10) && (
                       <p className="mt-2 text-xs font-bold text-red-600 animate-pulse">
-                        ⚠️ O valor mínimo para entrega é de 10,00€. Adicione mais { (10 - getTotal()).toFixed(2) }€ em produtos.
+                        ⚠️ O valor mínimo para entrega é de {(settings.min_delivery_amount || 10).toFixed(2)}€. Adicione mais { ((settings.min_delivery_amount || 10) - getTotal()).toFixed(2) }€ em produtos.
                       </p>
                     )}
                   </div>
