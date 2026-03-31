@@ -67,12 +67,7 @@ export function PizzariaDashboard() {
           icon={<DollarSign className="h-6 w-6" />}
           color="bg-green-500"
         />
-        <StatCard
-          title="Total Comissões"
-          value={`${stats.total_commissions.toFixed(2)}€`}
-          icon={<DollarSign className="h-6 w-6" />}
-          color="bg-orange-600"
-        />
+
         <StatCard
           title="Ticket Médio"
           value={`${stats.average_order_value.toFixed(2)}€`}

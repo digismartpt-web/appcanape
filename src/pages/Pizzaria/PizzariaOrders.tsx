@@ -837,12 +837,6 @@ export function PizzariaOrders() {
                     <span>Total Pago</span>
                     <span>{formatPrice(selectedOrder.total)}</span>
                   </div>
-                  {selectedOrder.commission_total !== undefined && (
-                    <div className="flex justify-between text-sm font-medium text-orange-600 bg-orange-50 p-2 rounded">
-                      <span>Comissão da App (10%)</span>
-                      <span>-{formatPrice(selectedOrder.commission_total)}</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Statut et date */}
