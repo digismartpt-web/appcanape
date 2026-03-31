@@ -358,7 +358,7 @@ export const ordersService = {
   },
 
   async getAllOrders(): Promise<Order[]> {
-    const { data, error } = await supabase.from(COLLECTIONS.ORDERS).select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from(COLLECTIONS.ORDERS).select('*').order('updated_at', { ascending: false });
     if (error) throw new Error(error.message);
     return (data || []).map(this.mapOrder);
   },

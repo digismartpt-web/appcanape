@@ -3,6 +3,7 @@ import { Clock, Package, CheckCircle, XCircle, Eye, Phone, Mail, MapPin, Truck, 
 import { useAuth } from '../hooks/useAuth';
 import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 import { ordersService } from '../services/supabaseService';
+import { checkOpeningHours } from '../services/openingHoursService';
 import type { Order } from '../types';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -151,6 +152,27 @@ export default function MesCommandes() {
   };
 
   const handlePayNow = async (order: Order) => {
+    // Vérification de l'ouverture du restaurant
+    let openingHoursCheck = { isOpen: false, message: 'Horários não configurados' };
+    try {
+      if (settings?.opening_hours) {
+        openingHoursCheck = checkOpeningHours(settings.opening_hours, settings.cutoff_minutes_before_closing);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar horários:', error);
+    }
+
+    const canOrder = settings?.is_open && openingHoursCheck.isOpen;
+
+    if (!canOrder) {
+      if (settings && !settings.is_open) {
+        alert('⚠️ O restaurante está fechado no momento. Não é possível processar pagamentos.');
+      } else {
+        alert(`⚠️ ${openingHoursCheck.message || 'O restaurante está fora du horário de atendimento.'}`);
+      }
+      return;
+    }
+
     setIsProcessingPayment(order.id);
     try {
       console.log('🚀 Iniciando pagamento pendente para ordem:', order.id);
