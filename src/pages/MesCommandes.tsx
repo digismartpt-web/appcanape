@@ -153,7 +153,7 @@ export default function MesCommandes() {
 
   const handlePayNow = async (order: Order) => {
     // Vérification de l'ouverture du restaurant
-    let openingHoursCheck = { isOpen: false, message: 'Horários não configurados' };
+    let openingHoursCheck: any = { isOpen: false, message: 'Horários não configurados' };
     try {
       if (settings?.opening_hours) {
         openingHoursCheck = checkOpeningHours(settings.opening_hours, settings.cutoff_minutes_before_closing);
@@ -166,9 +166,10 @@ export default function MesCommandes() {
 
     if (!canOrder) {
       if (settings && !settings.is_open) {
-        alert('⚠️ O restaurante está fechado no momento. Não é possível processar pagamentos.');
+        alert('⚠️ O restaurante encontra-se encerrado de momento. Não é possível processar pagamentos.');
       } else {
-        alert(`⚠️ ${openingHoursCheck.message || 'O restaurante está fora du horário de atendimento.'}`);
+        const msg = (openingHoursCheck as any).message || 'O restaurante encontra-se fora do horário de atendimento.';
+        alert(`⚠️ ${msg}`);
       }
       return;
     }
