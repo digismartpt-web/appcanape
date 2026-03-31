@@ -60,6 +60,14 @@ export function PizzariaOrders() {
     };
   }, []);
 
+  // Sync preparation/delivery time with settings when they load
+  useEffect(() => {
+    if (settings) {
+      if (settings.default_preparation_time) setPreparationTime(settings.default_preparation_time);
+      if (settings.default_delivery_time) setDeliveryTime(settings.default_delivery_time);
+    }
+  }, [settings]);
+
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Alerte sonore pour les nouvelles commandes (Pizzaria ou Admin)

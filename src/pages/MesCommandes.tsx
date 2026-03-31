@@ -259,13 +259,21 @@ export default function MesCommandes() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Banner dinâmico: Só aparece se houver entrega pendente de confirmação */}
         {orders.some(o => o.delivery_type === 'delivery' && o.status === 'en_attente' && !o.estimated_delivery_time_confirmed) && (
-          <div className="bg-red-50 border-2 border-red-500 rounded-xl p-6 mb-8 text-center animate-pulse shadow-lg">
-            <p className="text-red-700 font-extrabold text-lg sm:text-xl mb-2 flex items-center justify-center gap-2">
-              ⚠️ CONFIRMAÇÃO DE HORÁRIO NECESSÁRIA
-            </p>
-            <p className="text-red-900 font-bold text-sm sm:text-lg">
-              Tem uma encomenda para entrega. Por favor, fique atento a esta página para <strong>confirmar o horário</strong> na aplicação assim que a pizzaria propor uma hora.
-            </p>
+          <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 rounded-2xl p-5 sm:p-6 mb-8 shadow-xl border border-white/10 group">
+            <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all duration-500"></div>
+            <div className="relative flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+              <div className="bg-white/20 p-3 rounded-full backdrop-blur-md">
+                <BellRing className="w-6 h-6 text-white animate-bounce-subtle" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-extrabold text-base sm:text-lg tracking-tight uppercase mb-1">
+                  Confirmação de Horário Necessária
+                </h3>
+                <p className="text-indigo-50 text-sm sm:text-base leading-relaxed">
+                  Para a sua entrega, fique atento a esta página. Precisará de <strong>confirmar o horário</strong> na aplicação assim que a pizzaria fizer uma proposta.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

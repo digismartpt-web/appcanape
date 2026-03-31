@@ -23,7 +23,6 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     updateQuantity,
     removeItem,
     getTotal,
-    clearCart,
     deliveryType,
     deliveryAddress,
     setDeliveryType,
@@ -211,7 +210,6 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
       const session = await ordersService.createStripeSession(orderId, stripeItems, user.email);
       
       if (session && session.url) {
-        clearCart();
         window.location.href = session.url;
       } else {
         throw new Error('Não foi possível gerar o link de pagamento');

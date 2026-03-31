@@ -2,18 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import { ordersService } from '../services/supabaseService';
-import { Order } from '../types';
+import { useCartStore } from '../stores/cartStore';
 
 export const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [order, setOrder] = useState<Order | null>(null);
+  const { clearCart } = useCartStore();
   
   const orderId = searchParams.get('order_id');
 
   useEffect(() => {
     const confirmOrder = async () => {
+      // Nettoyer le panier dès l'arrivée sur l'écran de succès pour éviter le flash initial dans le modal
+      clearCart();
+
       // Stripe ajoute automatiquement order_id à l'URL
       if (!orderId) {
         console.warn("⚠️ Aucun ID de commande trouvé dans l'URL");
@@ -25,26 +28,20 @@ export const PaymentSuccess: React.FC = () => {
         await ordersService.confirmPayment(orderId);
         
         // Fetch order details to check delivery type
-        const allOrders = await ordersService.getAllOrders();
-        const currentOrder = allOrders.find(o => o.id === orderId);
-        if (currentOrder) {
-          setOrder(currentOrder);
-        }
-
         setStatus('success');
         console.log('✅ Pagamento confirmado no Supabase');
         
-        // Aumentado para 10 segundos para o cliente ver o aviso importante
-        setTimeout(() => navigate('/mes-commandes'), 10000);
+        // Délai de redirection standard (5s)
+        setTimeout(() => navigate('/mes-commandes'), 5000);
       } catch (error) {
         console.error('Erro ao confirmar:', error);
         setStatus('success');
-        setTimeout(() => navigate('/mes-commandes'), 10000);
+        setTimeout(() => navigate('/mes-commandes'), 5000);
       }
     };
 
     confirmOrder();
-  }, [orderId, navigate]);
+  }, [orderId, navigate, clearCart]);
 
   if (status === 'loading') {
     return (
@@ -67,22 +64,9 @@ export const PaymentSuccess: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
           Pagamento Concluído!
         </h1>
-        <p className="text-lg text-gray-600 mb-6">
-          Obrigado pela sua encomenda. A pizzaria foi notificada e vai começar a preparar o seu pedido em breve.
+        <p className="text-lg text-gray-600 mb-10">
+          Obrigado pela sua encomenda. A pizzaria foi notificada e vai começar a preparar o seu pedido em brevê.
         </p>
-
-        {/* Só mostramos o aviso se for entrega (delivery) */}
-        {order?.delivery_type === 'delivery' && (
-          <div className="bg-red-50 border-2 border-red-500 rounded-xl p-6 mb-8 text-center animate-pulse">
-            <p className="text-red-700 font-extrabold text-xl mb-2 flex items-center justify-center gap-2">
-              ⚠️ AVISO IMPORTANTE ⚠️
-            </p>
-            <p className="text-red-900 text-lg">
-              Terá de <strong>confirmar o horário</strong> da sua entrega <strong>na aplicação</strong> assim que a pizzaria propor uma hora. <br />
-              Fique atento às notificações na página "As Minhas Encomendas".
-            </p>
-          </div>
-        )}
 
         <div className="space-y-4">
           <button
