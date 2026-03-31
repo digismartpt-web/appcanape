@@ -256,7 +256,7 @@ export const ordersService = {
   },
 
   async confirmPayment(orderId: string): Promise<void> {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ 
+    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({
       status: 'en_attente',
       updated_at: new Date().toISOString()
     }).eq('id', orderId);
