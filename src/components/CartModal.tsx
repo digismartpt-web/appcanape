@@ -10,6 +10,7 @@ import { checkOpeningHours } from '../services/openingHoursService';
 import { AddressAutocomplete } from './AddressAutocomplete';
 import { calculateCommissionAmount } from '../utils/priceUtils';
 import type { OrderItem, DeliveryType } from '../types';
+import toast from 'react-hot-toast';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -33,7 +34,8 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
   const { settings } = usePizzariaSettings();
   const navigate = useNavigate();
   const [localDeliveryType, setLocalDeliveryType] = useState<DeliveryType>(deliveryType);
-  const [localDeliveryAddress, setLocalDeliveryAddress] = useState(deliveryAddress);
+  const [localDeliveryAddress, setLocalDeliveryAddress] = useState(user?.address || '');
+  const [distanceError, setDistanceError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   let openingHoursCheck: { isOpen: boolean; message: string } = { isOpen: false, message: 'Horários não configurados' };
@@ -49,7 +51,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (isOpen) {
       setLocalDeliveryType(deliveryType);
-      setLocalDeliveryAddress(deliveryAddress);
+      setLocalDeliveryAddress(deliveryAddress || user?.address || '');
     }
   }, [isOpen]); // On ne synchronise qu'à l'ouverture
 
@@ -57,11 +59,21 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (localDeliveryType === 'delivery' && localDeliveryAddress.trim().length > 5 && settings.address) {
       // Appel silencieux pour remplir le cache
-      calculateDeliveryTime(settings.address, localDeliveryAddress).catch(() => {
-        // Erreur ignorée en arrière-plan
-      });
+      calculateDeliveryTime(settings.address, localDeliveryAddress)
+        .then(estimate => {
+          if (!estimate.isFallback && settings.max_delivery_distance && settings.max_delivery_distance > 0 && estimate.distance > settings.max_delivery_distance) {
+            setDistanceError(`⚠️ Fora da área de entrega (${estimate.distance.toFixed(1)}km / máx ${settings.max_delivery_distance}km)`);
+          } else {
+            setDistanceError(null);
+          }
+        })
+        .catch(() => {
+          setDistanceError(null);
+        });
+    } else {
+      setDistanceError(null);
     }
-  }, [localDeliveryType, localDeliveryAddress, settings.address]);
+  }, [localDeliveryType, localDeliveryAddress, settings.address, settings.max_delivery_distance]);
 
   if (!isOpen) return null;
 
@@ -131,7 +143,8 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
           if (estimate.isFallback) {
             console.warn('⚠️ Commande autorisée en mode Secours (API Google Offline)');
           } else if (settings.max_delivery_distance && settings.max_delivery_distance > 0 && deliveryDistance > settings.max_delivery_distance) {
-            alert(`⚠️ Desculpe, não conseguimos entregar nesta morada!\n\nDistância: ${deliveryDistance.toFixed(1)} km\nDistância máxima: ${settings.max_delivery_distance} km\n\nNo entanto, pode vir levantar a sua encomenda ao nosso restaurante.`);
+            toast.error(`Desculpe, não conseguimos entregar nesta morada! (${deliveryDistance.toFixed(1)}km)`);
+            setDistanceError(`Fora da área de entrega (${deliveryDistance.toFixed(1)}km)`);
             setIsSubmitting(false); // On débloque le bouton
             return;
           }
@@ -353,20 +366,25 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {localDeliveryType === 'delivery' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Morada de Entrega *
-                    </label>
-                    <AddressAutocomplete
-                      value={localDeliveryAddress}
-                      onChange={setLocalDeliveryAddress}
-                      placeholder="Comece a escrever a sua morada..."
-                    />
-                    {getTotal() < (settings.min_delivery_amount || 10) && (
-                      <p className="mt-2 text-xs font-bold text-red-600 animate-pulse">
-                        ⚠️ O valor mínimo para entrega é de {(settings.min_delivery_amount || 10).toFixed(2)}€. Adicione mais { ((settings.min_delivery_amount || 10) - getTotal()).toFixed(2) }€ em produtos.
-                      </p>
-                    )}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Morada de Entrega</label>
+                      <AddressAutocomplete
+                        value={localDeliveryAddress}
+                        onChange={setLocalDeliveryAddress}
+                        placeholder="Introduza a sua morada..."
+                      />
+                      {distanceError && (
+                        <p className="mt-2 text-sm text-red-600 font-bold animate-pulse">
+                          {distanceError}
+                        </p>
+                      )}
+                      {getTotal() < (settings.min_delivery_amount || 10) && (
+                        <p className="mt-2 text-xs font-bold text-red-600 animate-pulse">
+                          ⚠️ O valor mínimo para entrega é de {(settings.min_delivery_amount || 10).toFixed(2)}€. Adicione mais { ((settings.min_delivery_amount || 10) - getTotal()).toFixed(2) }€ em produtos.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -475,19 +493,20 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
             <div className="flex gap-4">
               <button
                 onClick={handleCheckout}
-                disabled={!canOrder || isSubmitting || (localDeliveryType === 'delivery' && getTotal() < (settings.min_delivery_amount || 10))}
-                className={`flex-1 py-4 rounded-xl font-bold text-lg transition-transform active:scale-95 shadow-lg flex items-center justify-center gap-3 ${!canOrder || isSubmitting || (localDeliveryType === 'delivery' && getTotal() < (settings.min_delivery_amount || 10)) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-accent-600 text-white hover:bg-accent-700'
-                  }`}
+                disabled={!canOrder || isSubmitting || items.length === 0 || (localDeliveryType === 'delivery' && (getTotal() < (settings.min_delivery_amount || 10) || !!distanceError))}
+                className="w-full bg-accent-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-accent-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     A processar...
                   </>
                 ) : !canOrder ? (
                   'Restaurante Fechado'
                 ) : (localDeliveryType === 'delivery' && getTotal() < (settings.min_delivery_amount || 10)) ? (
                   `Mínimo ${(settings.min_delivery_amount || 10).toFixed(2)}€ p/ Entrega`
+                ) : distanceError ? (
+                  'Distância Excessiva'
                 ) : (
                   'Pagar Online'
                 )}
