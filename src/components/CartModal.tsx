@@ -45,7 +45,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
   } catch (error) {
     console.error('Erro ao verificar os horários dans CartModal:', error);
   }
-  const canOrder = settings.is_open && openingHoursCheck.isOpen;
+  const canOrder = settings?.is_open !== false && (openingHoursCheck?.isOpen !== false);
 
   // Initialisation synchronisée une seule fois à l'ouverture du modal
   useEffect(() => {
@@ -57,11 +57,11 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
 
   // PRÉ-CALCUL : On lance le calcul dès que l'adresse est saisie pour remplir le cache
   useEffect(() => {
-    if (localDeliveryType === 'delivery' && localDeliveryAddress.trim().length > 5 && settings.address) {
+    if (localDeliveryType === 'delivery' && localDeliveryAddress.trim().length > 5 && settings?.address) {
       // Appel silencieux pour remplir le cache
       calculateDeliveryTime(settings.address, localDeliveryAddress)
         .then(estimate => {
-          if (!estimate.isFallback && settings.max_delivery_distance && settings.max_delivery_distance > 0 && estimate.distance > settings.max_delivery_distance) {
+          if (!estimate.isFallback && settings?.max_delivery_distance && settings?.max_delivery_distance > 0 && estimate.distance > settings?.max_delivery_distance) {
             setDistanceError(`⚠️ Fora da área de entrega (${estimate.distance.toFixed(1)}km / máx ${settings.max_delivery_distance}km)`);
           } else {
             setDistanceError(null);
@@ -85,14 +85,14 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    const minDeliveryAmount = settings.min_delivery_amount || 10;
+    const minDeliveryAmount = settings?.min_delivery_amount || 10;
     if (localDeliveryType === 'delivery' && getTotal() < minDeliveryAmount) {
       alert(`⚠️ O valor mínimo para entrega é de ${minDeliveryAmount.toFixed(2)}€.\n\nPor favor, adicione mais itens ao seu carrinho ou escolha a opção "Levantar no restaurante".`);
       return;
     }
 
     if (!canOrder) {
-      if (!settings.is_open) {
+      if (!settings?.is_open) {
         alert('⚠️ O restaurante está fechado no momento. Por favor, volte mais tarde!');
       } else if (!openingHoursCheck.isOpen) {
         alert(`⚠️ ${openingHoursCheck.message}`);
@@ -124,12 +124,12 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
         custom_ingredients: item.customIngredients
       }));
 
-      const commissionPercent = settings.service_fee_percentage || 10;
+      const commissionPercent = settings?.service_fee_percentage || 10;
       let estimatedTime = 20;
       let deliveryDistance = undefined;
       let isManualAddress = false;
 
-      if (localDeliveryType === 'delivery' && settings.address) {
+      if (localDeliveryType === 'delivery' && settings?.address) {
         try {
           const estimate = await calculateDeliveryTime(
             settings.address,
@@ -142,7 +142,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
           // SOLUTION DE SECOURS : Si c'est un fallback (API en panne), on ne bloque pas le client
           if (estimate.isFallback) {
             console.warn('⚠️ Commande autorisée en mode Secours (API Google Offline)');
-          } else if (settings.max_delivery_distance && settings.max_delivery_distance > 0 && deliveryDistance > settings.max_delivery_distance) {
+          } else if (settings?.max_delivery_distance && settings?.max_delivery_distance > 0 && deliveryDistance > settings?.max_delivery_distance) {
             toast.error(`Desculpe, não conseguimos entregar nesta morada! (${deliveryDistance.toFixed(1)}km)`);
             setDistanceError(`Fora da área de entrega (${deliveryDistance.toFixed(1)}km)`);
             setIsSubmitting(false); // On débloque le bouton
@@ -155,7 +155,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
         }
       }
 
-      const publicDeliveryFee = localDeliveryType === 'delivery' && settings.delivery_fee
+      const publicDeliveryFee = localDeliveryType === 'delivery' && settings?.delivery_fee
         ? settings.delivery_fee
         : 0;
 
@@ -175,7 +175,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
           address: user.address,
           email: user.email
         },
-        pickup_address: settings.address,
+        pickup_address: settings?.address,
         delivery_type: localDeliveryType,
         delivery_address: localDeliveryType === 'delivery' 
           ? (isManualAddress ? `${localDeliveryAddress} (Manual)` : localDeliveryAddress) 
@@ -325,11 +325,11 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                   <div className="flex items-center justify-center mb-2">
                     <span className="text-2xl mr-2">🚫</span>
                     <p className="text-lg font-bold text-red-900">
-                      {!settings.is_open ? 'RESTAURANTE FECHADO' : 'FORA DO HORÁRIO DE ATENDIMENTO'}
+                      {!settings?.is_open ? 'RESTAURANTE FECHADO' : 'FORA DO HORÁRIO DE ATENDIMENTO'}
                     </p>
                   </div>
                   <p className="text-sm text-red-800 text-center">
-                    {!settings.is_open
+                    {!settings?.is_open
                       ? 'O restaurante está fechado no momento. Não é possível fazer novos pedidos. Por favor, volte mais tarde!'
                       : openingHoursCheck.message
                     }
@@ -379,9 +379,9 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                           {distanceError}
                         </p>
                       )}
-                      {getTotal() < (settings.min_delivery_amount || 10) && (
+                      {getTotal() < (settings?.min_delivery_amount || 10) && (
                         <p className="mt-2 text-xs font-bold text-red-600 animate-pulse">
-                          ⚠️ O valor mínimo para entrega é de {(settings.min_delivery_amount || 10).toFixed(2)}€. Adicione mais { ((settings.min_delivery_amount || 10) - getTotal()).toFixed(2) }€ em produtos.
+                          ⚠️ O valor mínimo para entrega é de {(settings?.min_delivery_amount || 10).toFixed(2)}€. Adicione mais { ((settings?.min_delivery_amount || 10) - getTotal()).toFixed(2) }€ em produtos.
                         </p>
                       )}
                     </div>
@@ -493,7 +493,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
             <div className="flex gap-4">
               <button
                 onClick={handleCheckout}
-                disabled={!canOrder || isSubmitting || items.length === 0 || (localDeliveryType === 'delivery' && (getTotal() < (settings.min_delivery_amount || 10) || !!distanceError))}
+                disabled={!canOrder || isSubmitting || items.length === 0 || (localDeliveryType === 'delivery' && (getTotal() < (settings?.min_delivery_amount || 10) || !!distanceError))}
                 className="w-full bg-accent-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-accent-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
@@ -503,8 +503,8 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                   </>
                 ) : !canOrder ? (
                   'Restaurante Fechado'
-                ) : (localDeliveryType === 'delivery' && getTotal() < (settings.min_delivery_amount || 10)) ? (
-                  `Mínimo ${(settings.min_delivery_amount || 10).toFixed(2)}€ p/ Entrega`
+                ) : (localDeliveryType === 'delivery' && getTotal() < (settings?.min_delivery_amount || 10)) ? (
+                  `Mínimo ${(settings?.min_delivery_amount || 10).toFixed(2)}€ p/ Entrega`
                 ) : distanceError ? (
                   'Distância Excessiva'
                 ) : (
