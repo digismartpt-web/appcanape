@@ -218,11 +218,14 @@ export const ordersService = {
     const functionUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token || supabaseAnonKey;
+
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Authorization': `Bearer ${accessToken}`,
           'apikey': supabaseAnonKey
         },
         body: JSON.stringify({
