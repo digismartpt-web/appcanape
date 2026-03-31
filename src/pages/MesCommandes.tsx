@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Package, CheckCircle, XCircle, Eye, Phone, Mail, MapPin, Truck, Store } from 'lucide-react';
+import { Clock, Package, CheckCircle, XCircle, Eye, Phone, Mail, MapPin, Truck, Store, CreditCard, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 import { ordersService } from '../services/supabaseService';
@@ -57,6 +57,7 @@ export default function MesCommandes() {
   const [showTimeConfirmModal, setShowTimeConfirmModal] = useState(false);
   const [confirmingOrder, setConfirmingOrder] = useState<Order | null>(null);
   const [requestedLaterTime, setRequestedLaterTime] = useState('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -144,8 +145,32 @@ export default function MesCommandes() {
       setShowTimeConfirmModal(false);
       setConfirmingOrder(null);
     } catch (error: any) {
-      console.error('❌ Erro ao solicitar novo horário:', error);
+      console.error('❌ Erro ao solicitar nouveau horário:', error);
       alert(`Erro ao solicitar novo horário: ${error.message || 'Desconhecido'}`);
+    }
+  };
+
+  const handlePayNow = async (order: Order) => {
+    setIsProcessingPayment(order.id);
+    try {
+      console.log('🚀 Iniciando pagamento pendente para ordem:', order.id);
+      
+      const sessionData = await ordersService.createStripeSession(
+        order.id,
+        order.items,
+        order.user.email
+      );
+
+      if (sessionData && sessionData.url) {
+        window.location.href = sessionData.url;
+      } else {
+        throw new Error('Falha ao gerar link de pagamento');
+      }
+    } catch (error: any) {
+      console.error('❌ Erro ao processar pagamento:', error);
+      alert(`Erro ao processar o pagamento: ${error.message || 'Tente novamente mais tarde'}`);
+    } finally {
+      setIsProcessingPayment(null);
     }
   };
 
@@ -227,6 +252,21 @@ export default function MesCommandes() {
                             </span>
                           )}
                         </div>
+
+                        {order.status === 'pendente_pagamento' && (
+                          <button
+                            onClick={() => handlePayNow(order)}
+                            disabled={isProcessingPayment === order.id}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm leading-4 font-bold rounded-md text-white bg-accent-600 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 touch-manipulation disabled:opacity-50"
+                          >
+                            {isProcessingPayment === order.id ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <CreditCard className="w-4 h-4 mr-2" />
+                            )}
+                            Pagar Agora
+                          </button>
+                        )}
 
                         <button
                           onClick={() => setSelectedOrder(order)}
