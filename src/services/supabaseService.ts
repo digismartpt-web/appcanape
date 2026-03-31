@@ -338,7 +338,7 @@ export const ordersService = {
       delivery_address: doc.delivery_address || undefined,
       delivery_distance: doc.delivery_distance,
       items: doc.items,
-      total: doc.total,
+      total: doc.total || doc.total_amount || doc.amount || 0,
       status: doc.status as OrderStatus,
       order_number: parseInt(doc.order_number),
       created_at: doc.created_at,
