@@ -6,6 +6,7 @@ interface SettingsState {
   settings: PizzariaSettings;
   loading: boolean;
   initialized: boolean;
+  fetchSettings: () => Promise<void>;
   initSettings: () => () => void;
   updateSettings: (newSettings: Partial<PizzariaSettings>) => Promise<boolean>;
 }
@@ -51,53 +52,72 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   loading: true,
   initialized: false,
 
+  fetchSettings: async () => {
+    try {
+      const { data, error } = await supabase.from('settings').select('*').eq('id', SETTINGS_ROW_ID).maybeSingle();
+      
+      if (error) throw error;
+      if (data) {
+        const merged = { ...defaultSettings, ...data };
+        set({ settings: merged, initialized: true });
+        try {
+          localStorage.setItem('pizzaria_settings_cache', JSON.stringify(merged));
+        } catch (e) {
+          // Navigation privée bloque parfois l'écriture
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ [SettingsStore] Fallback to cache or defaults:', error);
+      try {
+        const cache = localStorage.getItem('pizzaria_settings_cache');
+        if (cache) {
+          set({ settings: JSON.parse(cache), initialized: true });
+        }
+      } catch (e) {}
+    } finally {
+      set({ loading: false });
+    }
+  },
+
   initSettings: () => {
     if (get().initialized) return () => {};
 
     console.log('🔄 [SettingsStore] Inicializando ouvintes em tempo real...');
 
-    // Carga inicial
-    supabase.from('settings').select('*').eq('id', SETTINGS_ROW_ID).maybeSingle().then(({ data, error }) => {
-      if (!error && data) {
-          const merged = { ...defaultSettings, ...data };
-          set({ settings: merged, loading: false, initialized: true });
-          localStorage.setItem('pizzaria_settings_cache', JSON.stringify(merged));
-      } else if (!data && !error) {
-          // Criar se não existir
-          supabase.from('settings').insert({ id: SETTINGS_ROW_ID, ...defaultSettings }).then(() => {
-              set({ settings: defaultSettings, loading: false, initialized: true });
-          });
-      } else {
-          set({ loading: false });
-      }
-    });
+    get().fetchSettings();
 
-    // Inscrição em Tempo Real para TODAS as mudanças na tabela settings
-    // Removendo o filtro de ID para garantir que as atualizações cheguem
+    const channelId = 'public:settings';
     const channel = supabase
-      .channel('public:settings')
+      .channel(channelId)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'settings' 
-      }, (payload) => {
-        console.log('⚡ [SettingsStore] Mudança Realtime detectada:', payload);
+      }, (payload: any) => {
+        console.log('⚡ [SettingsStore] Mudança Realtime detectada:', payload.eventType);
         if (payload.new && (payload.new as any).id === SETTINGS_ROW_ID) {
           const data = payload.new as any;
-          const merged = { ...defaultSettings, ...data };
+          // On merge avec les valeurs par défaut pour éviter les champs manquants
+          const merged = { ...get().settings, ...data };
           set({ settings: merged });
-          localStorage.setItem('pizzaria_settings_cache', JSON.stringify(merged));
-          // Emitir evento para componentes legados se necessário
+          try {
+            localStorage.setItem('pizzaria_settings_cache', JSON.stringify(merged));
+          } catch (e) {}
           window.dispatchEvent(new Event('settings_updated'));
         }
       })
-      .subscribe((status) => {
-        console.log('📡 [SettingsStore] Status da subscrição Realtime:', status);
+      .subscribe((status: string) => {
+        console.log(`📡 [SettingsStore] Status da subscrição ${channelId}:`, status);
       });
+
+    const pollingInterval = setInterval(() => {
+      get().fetchSettings();
+    }, 60000);
 
     return () => {
       console.log('🔌 [SettingsStore] Desconectando Realtime...');
       supabase.removeChannel(channel);
+      clearInterval(pollingInterval);
     };
   },
 
