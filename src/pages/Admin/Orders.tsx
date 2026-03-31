@@ -26,7 +26,6 @@ export function Orders() {
     };
   }, [subscribeToAllOrders]);
 
-  const [lastNotifiedOrderId, setLastNotifiedOrderId] = useState<string | null>(null);
 
   // Déverrouiller l'audio au premier clic/touche
   useEffect(() => {
@@ -43,18 +42,7 @@ export function Orders() {
     };
   }, []);
 
-  // Alerte sonore pour les nouvelles commandes
-  useEffect(() => {
-    const newOrder = orders.find(o => o.status === 'en_attente');
-    if (newOrder && newOrder.id !== lastNotifiedOrderId) {
-      audioNotificationService.playNotification();
-      if ('vibrate' in navigator) {
-        navigator.vibrate([300, 100, 300]);
-      }
-      setLastNotifiedOrderId(newOrder.id);
-    }
-  }, [orders, lastNotifiedOrderId]);
-
+  // Notificações sonoras desativadas na vista Admin
   const filteredOrders = orders
     .filter(order => order.status !== 'pendente_pagamento' && !order.admin_hidden)
     .filter(order =>
@@ -141,12 +129,12 @@ export function Orders() {
                         </select>
                         <button
                           onClick={async () => {
-                            if (window.confirm('Tem a certeza de que pretende remover esta encomenda do seu painel? Esta ação não afectará a visualização da pizzaria.')) {
+                            if (window.confirm('Tem a certeza de que pretende eliminar definitivamente esta encomenda?')) {
                               try {
-                                await ordersService.hideOrderForAdmin(order.id.toString());
-                                toast.success('Encomenda removida do painel admin');
+                                await ordersService.deleteOrder(order.id.toString());
+                                toast.success('Encomenda eliminada com sucesso');
                               } catch (e: any) {
-                                toast.error('Erro ao remover a encomenda');
+                                toast.error('Erro ao eliminar a encomenda');
                                 console.error(e);
                               }
                             }

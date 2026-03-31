@@ -326,7 +326,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="overflow-y-auto flex-1 p-4 sm:p-6">
-          {items.length === 0 ? (
+          {items.length === 0 && !isSubmitting ? (
             <div className="text-center py-8 text-gray-500">
               <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg">O seu carrinho está vazio</p>
@@ -334,6 +334,12 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             <>
+              {isSubmitting && (
+                <div className="mb-4 p-4 bg-accent-50 border border-accent-200 rounded-lg flex items-center justify-center gap-3 animate-pulse">
+                  <div className="w-5 h-5 border-2 border-accent-600 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-accent-800 font-bold">A redirecionar para o pagamento seguro...</p>
+                </div>
+              )}
               {getBannerMessage()}
 
               {!canOrder && (

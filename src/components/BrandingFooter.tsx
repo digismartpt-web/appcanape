@@ -1,7 +1,7 @@
 export function BrandingFooter() {
     return (
-        <div className="fixed bottom-4 right-4 z-[100]">
-            <div className="bg-black text-white py-2 px-4 rounded-lg shadow-2xl border border-gray-800 flex items-center space-x-3 text-[10px] sm:text-xs font-bold tracking-widest uppercase">
+        <div className="fixed top-20 left-4 sm:top-auto sm:bottom-4 sm:right-4 sm:left-auto z-[100]">
+            <div className="bg-black/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg shadow-2xl border border-gray-800 flex items-center space-x-3 text-[10px] sm:text-xs font-bold tracking-widest uppercase">
                 <span className="opacity-90">DEVELOPED BY</span>
                 <a
                     href="https://digismartai.netlify.app/"

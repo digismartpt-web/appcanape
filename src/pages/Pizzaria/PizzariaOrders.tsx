@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import { Clock, CheckCircle, XCircle, Package, Truck, Phone, Mail, MapPin, Eye, Trash2, Store } from 'lucide-react';
 import { ordersService } from '../../services/supabaseService';
 import { useOrderStore } from '../../stores/orderStore';
@@ -20,6 +21,7 @@ const statusConfig = {
 };
 
 export function PizzariaOrders() {
+  const { user } = useAuth();
   const { orders, loading, initAdminOrdersListener } = useOrderStore();
   const { settings } = usePizzariaSettings();
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'all'>('all');
@@ -60,19 +62,20 @@ export function PizzariaOrders() {
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Alerte sonore pour les nouvelles commandes
+  // Alerte sonore pour les nouvelles commandes (Pizzaria ou Admin)
   useEffect(() => {
+    // Ne pas jouer de son si l'utilisateur est un ADMIN (comme demandé)
+    if (user?.role === 'admin') return;
+
     const newOrder = orders.find(o => o.status === 'en_attente');
     
     if (newOrder) {
-      // Se for a primeira carga, apenas registamos o ID sem tocar o som
       if (isInitialLoad) {
         setLastNotifiedOrderId(newOrder.id);
         setIsInitialLoad(false);
         return;
       }
 
-      // Se for uma ordem nova (ID diferente da última notificada)
       if (newOrder.id !== lastNotifiedOrderId) {
         audioNotificationService.playNotification();
         if ('vibrate' in navigator) {
@@ -81,7 +84,7 @@ export function PizzariaOrders() {
         setLastNotifiedOrderId(newOrder.id);
       }
     }
-  }, [orders, lastNotifiedOrderId, isInitialLoad]);
+  }, [orders, lastNotifiedOrderId, isInitialLoad, user?.role]);
 
   useEffect(() => {
     const unsubscribe = initAdminOrdersListener();
