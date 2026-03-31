@@ -19,23 +19,17 @@ export const PaymentSuccess: React.FC = () => {
       }
 
       try {
-        // Tentar confirmar, mas não bloquear o usuário se falhar a sincronização visual
-        await ordersService.confirmPayment(orderId);
-        setStatus('success');
-        toast.success('Paiamento processado!');
-        
-        setTimeout(() => {
-          navigate('/mes-commandes');
-        }, 4000);
+        const success = await ordersService.confirmPayment(orderId);
+        if (success) {
+          setStatus('success');
+          toast.success('Pagamento confirmado!');
+          setTimeout(() => navigate('/mes-commandes'), 4000);
+        } else {
+          setStatus('error');
+        }
       } catch (error) {
-        console.error('Erro de sincronização pós-pagamento:', error);
-        // Mesmo com erro de sync, o pagamento foi feito no Stripe, então mostramos sucesso
-        setStatus('success');
-        toast.success('Paiamento concluído!');
-        
-        setTimeout(() => {
-          navigate('/mes-commandes');
-        }, 5000);
+        console.error('Erro ao confirmar:', error);
+        setStatus('error');
       }
     };
 

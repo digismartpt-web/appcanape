@@ -231,7 +231,7 @@ export const ordersService = {
           orderId,
           items: orderItems,
           customerEmail: userEmail,
-          successUrl: window.location.origin,
+          successUrl: `${window.location.origin}/payment-success?order_id=${orderId}`,
           cancelUrl: window.location.origin
         })
       });
