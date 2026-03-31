@@ -255,13 +255,19 @@ export const ordersService = {
     }
   },
 
-  async confirmPayment(orderId: string): Promise<void> {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({
-      status: 'en_attente',
-      updated_at: new Date().toISOString()
-    }).eq('id', orderId);
-    
-    if (error) throw new Error(error.message);
+  async confirmPayment(orderId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase.from(COLLECTIONS.ORDERS).update({
+        status: 'en_attente',
+        updated_at: new Date().toISOString()
+      }).eq('id', orderId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao confirmar pagamento:', error);
+      return false;
+    }
   },
 
   async updateOrderStatus(orderId: string, status: OrderStatus, estimatedTime?: string, cancellationReason?: string) {
