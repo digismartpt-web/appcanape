@@ -514,7 +514,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-2">
               <button
                 onClick={handleCheckout}
                 disabled={!canOrder || isSubmitting || items.length === 0 || (localDeliveryType === 'delivery' && (getTotal() < (settings?.min_delivery_amount || 10) || !!distanceError))}
@@ -535,6 +535,9 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                   'Pagar Online'
                 )}
               </button>
+              <p className="text-center text-xs text-primary-600 font-medium">
+                Nota: O horário será confirmado por telefone pela pizzaria.
+              </p>
             </div>
           </div>
         )}

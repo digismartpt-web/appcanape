@@ -59,9 +59,18 @@ export const PaymentSuccess: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
           Pagamento Concluído!
         </h1>
-        <p className="text-lg text-gray-600 mb-8">
+        <p className="text-lg text-gray-600 mb-6">
           Obrigado pela sua encomenda. A pizzaria foi notificada e vai começar a preparar o seu pedido em breve.
         </p>
+
+        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-8 text-left">
+          <p className="text-orange-700 font-bold mb-1 flex items-center gap-2">
+            ⚠️ ATENÇÃO / IMPORTANTE:
+          </p>
+          <p className="text-orange-800">
+            Fique atento ao seu <strong>telemóvel</strong>. A pizzaria irá entrar em contacto consigo em breve para <strong>confirmar o horário exato</strong> de levantamento ou entrega da sua encomenda.
+          </p>
+        </div>
 
         <div className="space-y-4">
           <button
