@@ -179,12 +179,6 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleDeliveryTypeChange = (type: DeliveryType) => {
-    const minDeliveryAmount = settings.min_delivery_amount || 10;
-    if (type === 'delivery' && getTotal() < minDeliveryAmount) {
-      alert(`⚠️ Atenção: O valor mínimo do pedido para entrega ao domicílio é de ${minDeliveryAmount.toFixed(2)}€.\n\nAtualmente o seu carrinho é de ${getTotal().toFixed(2)}€.`);
-      return;
-    }
-    
     setLocalDeliveryType(type);
     if (type === 'pickup') {
       setLocalDeliveryAddress('');
@@ -463,8 +457,8 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
             <div className="flex gap-4">
               <button
                 onClick={handleCheckout}
-                disabled={!canOrder || isSubmitting}
-                className={`flex-1 py-4 rounded-xl font-bold text-lg transition-transform active:scale-95 shadow-lg flex items-center justify-center gap-3 ${!canOrder || isSubmitting ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-accent-600 text-white hover:bg-accent-700'
+                disabled={!canOrder || isSubmitting || (localDeliveryType === 'delivery' && getTotal() < (settings.min_delivery_amount || 10))}
+                className={`flex-1 py-4 rounded-xl font-bold text-lg transition-transform active:scale-95 shadow-lg flex items-center justify-center gap-3 ${!canOrder || isSubmitting || (localDeliveryType === 'delivery' && getTotal() < (settings.min_delivery_amount || 10)) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-accent-600 text-white hover:bg-accent-700'
                   }`}
               >
                 {isSubmitting ? (
@@ -474,6 +468,8 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                   </>
                 ) : !canOrder ? (
                   'Restaurante Fechado'
+                ) : (localDeliveryType === 'delivery' && getTotal() < (settings.min_delivery_amount || 10)) ? (
+                  `Mínimo ${(settings.min_delivery_amount || 10).toFixed(2)}€ p/ Entrega`
                 ) : (
                   'Pagar Online'
                 )}
