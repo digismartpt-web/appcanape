@@ -456,7 +456,7 @@ export const ordersService = {
   },
 
   async deleteAllOrders() {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ pizzeria_hidden: true });
+    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ pizzeria_hidden: true }).not('id', 'is', null);
     if (error) throw new Error(error.message);
   }
 };
