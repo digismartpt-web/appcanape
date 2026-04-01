@@ -96,7 +96,7 @@ serve(async (req) => {
 
     // Création de la Session de Paiement Sécurisée
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      automatic_payment_methods: { enabled: true },
       line_items: lineItems,
       mode: "payment",
       success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}&order_id=${orderId}`,
