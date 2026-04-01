@@ -163,7 +163,9 @@ export function PizzariaOrders() {
       if (newStatus === 'en_preparation' && order) {
         setPendingStatusChange({ orderId, newStatus });
         setEditingOrder(order);
-        setPreparationTime(order.preparation_time || settings?.default_preparation_time || 10);
+        // Prioritize settings if order has no preparation time yet
+        const defaultTime = settings?.default_preparation_time || 10;
+        setPreparationTime(order.preparation_time || defaultTime);
         setShowTimeModal(true);
         return;
       }
@@ -192,8 +194,6 @@ export function PizzariaOrders() {
         setPendingStatusChange({ orderId, newStatus });
         setEditingDeliveryOrder(order);
 
-        toast.loading('Calculando tempo de entrega...');
-
         try {
           const estimate = await calculateDeliveryTime(
             settings.address,
@@ -204,7 +204,6 @@ export function PizzariaOrders() {
           setDeliveryTime(estimate.duration);
           setDeliveryDistance(estimate.distance);
           setShowDeliveryTimeModal(true);
-          console.log('✅ Modal should open with time:', estimate.duration);
         } catch (error) {
           toast.dismiss();
           console.error('Erro ao calcular tempo de entrega:', error);
@@ -213,7 +212,6 @@ export function PizzariaOrders() {
           setDeliveryDistance(5);
           setShowDeliveryTimeModal(true);
           toast.error('Erro ao calcular - usando tempo padrão');
-          console.log('⚠️ Modal should open with default time:', defDeliveryTime);
         }
         return;
       }
@@ -232,7 +230,8 @@ export function PizzariaOrders() {
 
   const handleEditPreparationTime = (order: Order) => {
     setEditingOrder(order);
-    setPreparationTime(order.preparation_time || settings?.default_preparation_time || 10);
+    const defaultTime = settings?.default_preparation_time || 10;
+    setPreparationTime(order.preparation_time || defaultTime);
     setShowTimeModal(true);
   };
 
@@ -510,6 +509,19 @@ export function PizzariaOrders() {
                       <p className="text-sm text-gray-600">{formatPrice(order.total)}</p>
                     </div>
 
+                    {/* Motif d'annulation - version mobile */}
+                    {order.status === 'cancelled' && order.cancellation_reason && (
+                      <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="flex items-start">
+                          <XCircle className="h-4 w-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs font-semibold text-red-900 mb-0.5">Motivo da anulação:</p>
+                            <p className="text-xs text-red-800">{order.cancellation_reason}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex flex-col gap-2">
                       <select
                         value={order.status}
@@ -600,6 +612,18 @@ export function PizzariaOrders() {
                             <span>{formatPrice(order.total)}</span>
                             <span>{order.user.full_name}</span>
                           </div>
+                          {/* Motif d'annulation - version desktop */}
+                          {order.status === 'cancelled' && order.cancellation_reason && (
+                            <div className="mt-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                              <div className="flex items-start">
+                                <XCircle className="h-4 w-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <span className="text-xs font-semibold text-red-900">Motivo da anulação: </span>
+                                  <span className="text-xs text-red-800">{order.cancellation_reason}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -891,6 +915,21 @@ export function PizzariaOrders() {
                     <span>{formatPrice(selectedOrder.total)}</span>
                   </div>
                 </div>
+
+                {/* Motif d'annulation - modal détails */}
+                {selectedOrder.status === 'cancelled' && selectedOrder.cancellation_reason && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <XCircle className="h-5 w-5 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-semibold text-red-900 mb-1">Encomenda Cancelada</h4>
+                        <p className="text-sm text-red-800">
+                          <strong>Motivo:</strong> {selectedOrder.cancellation_reason}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Statut et date */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm text-gray-600">
