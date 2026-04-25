@@ -70,7 +70,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         });
 
         setIsLoading(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('🗺️ Autocomplete Error:', err);
         if (active) {
           setIsLoading(false);

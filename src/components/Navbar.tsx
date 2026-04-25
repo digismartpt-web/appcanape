@@ -22,7 +22,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
       await signOut();
       toast.success('Sessão terminada com sucesso');
       navigate('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao terminar sessão:', error);
       toast.error(error.message || 'Erro ao terminar sessão');
     }

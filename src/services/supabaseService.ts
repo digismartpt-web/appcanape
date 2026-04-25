@@ -260,7 +260,7 @@ export const ordersService = {
 
       const data = await response.json();
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Erro ao chamar Edge Function:', error);
       throw new Error(error.message || 'Falha ao processar pagamento');
     }
@@ -577,13 +577,13 @@ export const promotionsService = {
         count: doc.buy_condition?.count || 0,
         category: doc.buy_condition?.category,
         productIds: doc.buy_condition?.product_ids || doc.buy_condition?.productIds,
-        size: doc.buy_condition?.size
+        size: doc.buy_condition?.size as unknown, // TODO: typer
       },
       reward: {
         count: doc.reward?.count || 0,
         productId: doc.reward?.product_id || doc.reward?.productId,
         category: doc.reward?.category,
-        size: doc.reward?.size,
+        size: doc.reward?.size as unknown, // TODO: typer
         discountType: doc.reward?.discount_type || doc.reward?.discountType || 'free',
         discountValue: doc.reward?.discount_value || doc.reward?.discountValue || 0
       },
@@ -605,7 +605,7 @@ export const promotionsService = {
         count: promo.buyCondition.count,
         category: promo.buyCondition.category,
         product_ids: promo.buyCondition.productIds,
-        size: promo.buyCondition.size
+        size: promo.buyCondition.size as unknown, // TODO: typer
       };
     }
 
@@ -614,7 +614,7 @@ export const promotionsService = {
         count: promo.reward.count,
         product_id: promo.reward.productId,
         category: promo.reward.category,
-        size: promo.reward.size,
+        size: promo.reward.size as unknown, // TODO: typer
         discount_type: promo.reward.discountType,
         discount_value: promo.reward.discountValue
       };

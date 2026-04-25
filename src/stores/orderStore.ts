@@ -32,7 +32,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         loading: false,
         error: null
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       set({
         error: error.message || 'Erro ao carregar encomendas',
         loading: false
@@ -49,7 +49,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         loading: false,
         error: null
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       set({
         error: error.message || 'Erro ao carregar encomendas',
         loading: false
@@ -73,7 +73,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             : order
         )
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       set({
         error: error.message || 'Erro ao atualizar o estado'
       });

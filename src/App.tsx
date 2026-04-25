@@ -23,19 +23,20 @@ import { Profile } from './pages/Profile';
 import MesCommandes from './pages/MesCommandes';
 import { Privacy } from './pages/Privacy';
 import { Admin } from './pages/Admin';
-import { Pizzaria } from './pages/Pizzaria';
+
 import { PaymentSuccess } from './pages/PaymentSuccess';
 
 function MainContent() {
   const location = useLocation();
-  const isAdminOrPizzaria = location.pathname.startsWith('/admin') || location.pathname.startsWith('/pizzaria');
+  const isAdminOrPizzaria = location.pathname.startsWith('/admin') || location.pathname.startsWith('/appcanape');
 
   return (
     <main className={`flex-1 ${isAdminOrPizzaria ? 'w-full' : 'container mx-auto px-4 py-8'}`}>
       <Routes>
         <Route path="/" element={<Menu />} />
         <Route path="/contact" element={<Home />} />
-        <Route path="/menu" element={<Menu />} />
+        <Route path="/" element={<Home />} />
+<Route path="/admin" element={<AdminDashboard />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/profile" element={
           <ProtectedRoute>
@@ -53,11 +54,7 @@ function MainContent() {
             <Admin />
           </ProtectedRoute>
         } />
-        <Route path="/pizzaria/*" element={
-          <ProtectedRoute role="pizzeria">
-            <Pizzaria />
-          </ProtectedRoute>
-        } />
+        
         <Route path="/payment-success" element={<PaymentSuccess />} />
       </Routes>
     </main>
@@ -87,7 +84,7 @@ function App() {
     const unsubPizzas = initPizzasStore();
     const unsubPromosGlobal = initPromotionsStore();
     
-    // Only subscribe to all orders if user is admin or pizzaria
+    // Only subscribe to all orders if user is admin or appcanape
     let unsubOrders = () => {};
     if (user?.role === 'admin' || user?.role === 'pizzeria') {
       unsubOrders = initAdminOrdersListener(); // Auto re-init on role change via cleanup logic

@@ -145,7 +145,7 @@ export function Dashboard() {
       } else {
         setMessage({ type: 'error', text: 'Erro ao guardar a senha' });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao guardar:', error);
       setMessage({ type: 'error', text: error.message || 'Erro ao guardar a senha' });
     } finally {

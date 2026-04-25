@@ -91,7 +91,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       if (error) throw error;
       set({ user: null, loading: false });
       console.log('Sessão terminada com sucesso');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao terminar sessão:', error);
       throw new Error(error.message || 'Erro durante o término da sessão');
     }

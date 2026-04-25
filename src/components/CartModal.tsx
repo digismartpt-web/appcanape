@@ -215,7 +215,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
         throw new Error('Não foi possível gerar o link de pagamento');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro na encomenda:', error);
       alert(`Erro ao fazer a encomenda. Por favor, tente novamente.\n\nDetalhes: ${error.message || 'Erro de rede'}`);
     } finally {
@@ -230,7 +230,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const formatCustomizations = (item: any) => {
+  const formatCustomizations = (item: OrderItem) => {
     const customizations = [];
 
     if (item.removedIngredients && item.removedIngredients.length > 0) {

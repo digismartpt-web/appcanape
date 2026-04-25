@@ -30,7 +30,7 @@ export function useAppInitialization() {
           source: result.source as 'supabase' | 'mock',
           error: null
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         setState({
           loading: false,
           supabaseAvailable: false,

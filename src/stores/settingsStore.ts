@@ -136,7 +136,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         throw error;
       }
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ [SettingsStore] Erro ao gravar:', error);
       return false;
     }

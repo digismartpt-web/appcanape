@@ -150,7 +150,7 @@ export default function MesCommandes() {
       alert('Horário confirmado com sucesso!');
       setShowTimeConfirmModal(false);
       setConfirmingOrder(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Erro ao confirmar horário:', error);
       alert(`Erro ao confirmar horário: ${error.message || 'Desconhecido'}`);
     }
@@ -174,7 +174,7 @@ export default function MesCommandes() {
       alert(`Solicitação de entrega às ${requestedLaterTime} enviada!`);
       setShowTimeConfirmModal(false);
       setConfirmingOrder(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Erro ao solicitar nouveau horário:', error);
       alert(`Erro ao solicitar novo horário: ${error.message || 'Desconhecido'}`);
     }
@@ -235,7 +235,7 @@ export default function MesCommandes() {
       } else {
         throw new Error('Falha ao gerar link de pagamento');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Erro ao processar pagamento:', error);
       alert(`Erro ao processar o pagamento: ${error.message || 'Tente novamente mais tarde'}`);
     } finally {
