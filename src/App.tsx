@@ -70,15 +70,63 @@ import { useSettingsStore } from './stores/settingsStore';
 import { usePizzasStore } from './stores/pizzasStore';
 import { usePromotionsStore } from './stores/promotionsStore';
 import { useOrderStore } from './stores/orderStore';
+import { supabase } from './lib/supabase';
+import { audioNotificationService } from './services/audioNotificationService';
+
+async function showPizzeriaPushNotification(logoUrl?: string) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const icon = logoUrl || '/imagem.png';
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification('Nova Encomenda!', {
+        body: 'Uma nova encomenda foi recebida.',
+        icon,
+        badge: '/imagem.png',
+        vibrate: [300, 100, 300],
+        requireInteraction: true,
+        tag: 'nova-encomenda'
+      } as NotificationOptions);
+    } else {
+      new Notification('Nova Encomenda!', { body: 'Uma nova encomenda foi recebida.', icon });
+    }
+  } catch (error) {
+    console.warn('⚠️ Erro ao mostrar notificação push:', error);
+  }
+}
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { user } = useAuth();
   const { initPromotionsListener, initExtrasListener } = useCartStore();
-  const { initSettings } = useSettingsStore();
+  const { settings, initSettings } = useSettingsStore();
   const { initPizzasStore } = usePizzasStore();
   const { initPromotionsStore } = usePromotionsStore();
   const { initAdminOrdersListener } = useOrderStore();
+
+  // Subscription INSERT active sur toutes les pages pour l'utilisateur pizzeria
+  useEffect(() => {
+    if (user?.role !== 'pizzeria') return;
+
+    const channelId = `pizzeria_notifications_${Date.now()}`;
+    const channel = supabase
+      .channel(channelId)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          const newOrder = payload.new as any;
+          if (newOrder?.status === 'em_espera') {
+            audioNotificationService.playNotification();
+            if ('vibrate' in navigator) navigator.vibrate([300, 100, 300]);
+            showPizzeriaPushNotification(settings?.logo_url);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.role]);
 
   useEffect(() => {
     const unsubPromosLegacy = initPromotionsListener(); // Keep for cart logic synchronization if needed

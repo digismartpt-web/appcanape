@@ -43,8 +43,6 @@ export function PizzariaOrders() {
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   const [pendingStatusChange, setPendingStatusChange] = useState<{ orderId: string; newStatus: OrderStatus } | null>(null);
-  const [lastNotifiedOrderId, setLastNotifiedOrderId] = useState<string | null>(null);
-
   // Déverrouiller l'audio au premier clic/touche
   useEffect(() => {
     const unlock = () => {
@@ -67,32 +65,6 @@ export function PizzariaOrders() {
       if (settings.default_delivery_time) setDeliveryTime(settings.default_delivery_time);
     }
   }, [settings]);
-
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  // Alerte sonore pour les nouvelles commandes (Pizzaria ou Admin)
-  useEffect(() => {
-    // Ne pas jouer de son si l'utilisateur est un ADMIN (comme demandé)
-    if (user?.role === 'admin') return;
-
-    const newOrder = orders.find(o => o.status === 'em_espera');
-    
-    if (newOrder) {
-      if (isInitialLoad) {
-        setLastNotifiedOrderId(newOrder.id);
-        setIsInitialLoad(false);
-        return;
-      }
-
-      if (newOrder.id !== lastNotifiedOrderId) {
-        audioNotificationService.playNotification();
-        if ('vibrate' in navigator) {
-          navigator.vibrate([300, 100, 300]);
-        }
-        setLastNotifiedOrderId(newOrder.id);
-      }
-    }
-  }, [orders, lastNotifiedOrderId, isInitialLoad, user?.role]);
 
   useEffect(() => {
     const unsubscribe = initAdminOrdersListener();

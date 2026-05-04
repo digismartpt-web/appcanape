@@ -8,34 +8,7 @@ import { PizzariaCategories } from './PizzariaCategories';
 import { PizzariaPromotions } from './PizzariaPromotions';
 import { PizzariaSettings } from './PizzariaSettings';
 import { audioNotificationService } from '../../services/audioNotificationService';
-import { supabase } from '../../lib/supabase';
 import { useSettingsStore } from '../../stores/settingsStore';
-import toast from 'react-hot-toast';
-
-async function showPushNotification(logoUrl?: string) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  try {
-    const icon = logoUrl || '/imagem.png';
-    if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.ready;
-      await reg.showNotification('Nova Encomenda!', {
-        body: 'Uma nova encomenda foi recebida.',
-        icon,
-        badge: '/imagem.png',
-        vibrate: [300, 100, 300],
-        requireInteraction: true,
-        tag: 'nova-encomenda'
-      } as NotificationOptions);
-    } else {
-      new Notification('Nova Encomenda!', {
-        body: 'Uma nova encomenda foi recebida.',
-        icon
-      });
-    }
-  } catch (error) {
-    console.warn('⚠️ Erro ao mostrar notificação push:', error);
-  }
-}
 
 export function Pizzaria() {
   const { settings } = useSettingsStore();
@@ -67,33 +40,6 @@ export function Pizzaria() {
         }
       });
     }
-  }, []);
-
-  // Écouter UNIQUEMENT les nouveaux INSERT sur la table orders avec statut em_espera
-  useEffect(() => {
-    const channelId = `pizzaria_insert_orders_${Date.now()}`;
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'orders' },
-        (payload) => {
-          const newOrder = payload.new as any;
-          console.log('🆕 [Pizzaria] Nova encomenda inserida:', newOrder?.id, newOrder?.status);
-          if (newOrder?.status === 'em_espera') {
-            audioNotificationService.playNotification();
-            toast.success('Nova encomenda recebida!', { duration: 4000 });
-            showPushNotification(settings?.logo_url);
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 [Pizzaria] Subscrição INSERT orders:', status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   return (
