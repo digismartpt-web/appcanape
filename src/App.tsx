@@ -78,15 +78,26 @@ async function showPizzeriaPushNotification(logoUrl?: string) {
   try {
     const icon = logoUrl || '/imagem.png';
     if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.ready;
-      await reg.showNotification('Nova Encomenda!', {
-        body: 'Uma nova encomenda foi recebida.',
-        icon,
-        badge: '/imagem.png',
-        vibrate: [300, 100, 300],
-        requireInteraction: true,
-        tag: 'nova-encomenda'
-      } as NotificationOptions);
+      const controller = navigator.serviceWorker.controller;
+      if (controller) {
+        // Route through SW message handler so notification fires even on locked screen
+        controller.postMessage({
+          type: 'SHOW_NOTIFICATION',
+          title: 'Nova Encomenda!',
+          body: 'Uma nova encomenda foi recebida.',
+          icon
+        });
+      } else {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification('Nova Encomenda!', {
+          body: 'Uma nova encomenda foi recebida.',
+          icon,
+          badge: '/imagem.png',
+          vibrate: [300, 100, 300],
+          requireInteraction: true,
+          tag: 'nova-encomenda'
+        } as NotificationOptions);
+      }
     } else {
       new Notification('Nova Encomenda!', { body: 'Uma nova encomenda foi recebida.', icon });
     }
