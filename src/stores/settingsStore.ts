@@ -26,6 +26,7 @@ const defaultSettings: PizzariaSettings = {
   default_preparation_time: 10,
   default_delivery_time: 30,
   cutoff_minutes_before_closing: 30,
+  notification_sound_url: '',
   banner_active: false,
   banner_image_url: '',
   available_banner_images: [],

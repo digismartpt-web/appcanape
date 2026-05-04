@@ -9,10 +9,37 @@ import { PizzariaPromotions } from './PizzariaPromotions';
 import { PizzariaSettings } from './PizzariaSettings';
 import { audioNotificationService } from '../../services/audioNotificationService';
 import { ordersService } from '../../services/supabaseService';
+import { useSettingsStore } from '../../stores/settingsStore';
 import toast from 'react-hot-toast';
+
+async function showPushNotification(logoUrl?: string) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const icon = logoUrl || '/imagem.png';
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification('Nova Encomenda!', {
+        body: 'Uma nova encomenda foi recebida.',
+        icon,
+        badge: '/imagem.png',
+        vibrate: [300, 100, 300],
+        requireInteraction: true,
+        tag: 'nova-encomenda'
+      } as NotificationOptions);
+    } else {
+      new Notification('Nova Encomenda!', {
+        body: 'Uma nova encomenda foi recebida.',
+        icon
+      });
+    }
+  } catch (error) {
+    console.warn('⚠️ Erro ao mostrar notificação push:', error);
+  }
+}
 
 export function Pizzaria() {
   const previousOrderIdsRef = useRef<Set<string>>(new Set());
+  const { settings } = useSettingsStore();
 
   // Déverrouiller l'audio au premier clic de l'utilisateur (obligation navigateur)
   useEffect(() => {
@@ -22,6 +49,25 @@ export function Pizzaria() {
     };
     document.addEventListener('click', unlock);
     return () => document.removeEventListener('click', unlock);
+  }, []);
+
+  // Synchroniser l'URL du son custom depuis les settings
+  useEffect(() => {
+    if (settings?.notification_sound_url) {
+      audioNotificationService.setCustomSoundUrl(settings.notification_sound_url);
+    }
+  }, [settings?.notification_sound_url]);
+
+  // Demander la permission de notifications push au premier chargement
+  useEffect(() => {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          console.log('✅ Permission de notifications accordée');
+        }
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -34,12 +80,13 @@ export function Pizzaria() {
         !currentOrderIds.has(order.id) && order.status === 'en_attente'
       );
 
-      // Jouer le som e notification para novas encomendas
+      // Jouer le son et envoyer une notification push pour les nouvelles commandes
       if (hasNewOrders && currentOrderIds.size > 0) {
         audioNotificationService.playNotification();
         toast.success('Nova encomenda recebida!', {
           duration: 4000,
         });
+        showPushNotification(settings?.logo_url);
       }
 
       // Atualizar a lista de IDs

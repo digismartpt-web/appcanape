@@ -467,7 +467,9 @@ export function PizzariaOrders() {
                         <StatusIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
                         <div>
                           <p className="font-medium text-gray-900 flex items-center gap-2">
-                            #{order.order_number}
+                            <span style={order.status === 'en_attente' ? { backgroundColor: '#bbf7d0', padding: '0 4px', borderRadius: '2px' } : {}}>
+                              #{order.order_number}
+                            </span>
                             {order.delivery_type === 'delivery' ? (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800" title="Entrega ao domicílio">
                                 <Truck className="h-3 w-3" />
@@ -574,7 +576,9 @@ export function PizzariaOrders() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center space-x-3">
                             <p className="text-sm font-medium text-gray-900 truncate">
-                              Encomenda #{order.order_number}
+                              <span style={order.status === 'en_attente' ? { backgroundColor: '#bbf7d0', padding: '0 4px', borderRadius: '2px' } : {}}>
+                                Encomenda #{order.order_number}
+                              </span>
                             </p>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig[order.status]?.color || 'bg-gray-100 text-gray-800'}`}>
                               {statusConfig[order.status]?.label || order.status}

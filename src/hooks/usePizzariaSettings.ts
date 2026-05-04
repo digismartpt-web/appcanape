@@ -14,6 +14,7 @@ export interface PizzariaSettings {
   default_preparation_time?: number;
   default_delivery_time?: number;
   cutoff_minutes_before_closing?: number;
+  notification_sound_url?: string;
   banner_active?: boolean;
   banner_image_url?: string;
   available_banner_images?: string[];

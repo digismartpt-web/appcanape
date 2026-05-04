@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Save, Upload, MapPin, Phone, Mail, Clock, Building, Volume2, VolumeX } from 'lucide-react';
 import { usePizzariaSettings, type PizzariaSettings } from '../../hooks/usePizzariaSettings';
 import { audioNotificationService } from '../../services/audioNotificationService';
 import { OpeningHoursInput } from '../../components/OpeningHoursInput';
+import { supabase } from '../../lib/supabase';
 
 export function PizzariaSettings() {
   const { settings: firestoreSettings, loading: loadingSettings, updateSettings } = usePizzariaSettings();
@@ -11,6 +12,9 @@ export function PizzariaSettings() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(audioNotificationService.getEnabled());
   const [audioVolume, setAudioVolume] = useState(audioNotificationService.getVolume() * 100);
+  const [isUploadingSound, setIsUploadingSound] = useState(false);
+  const [soundFileName, setSoundFileName] = useState<string | null>(null);
+  const soundInputRef = useRef<HTMLInputElement>(null);
 
   // Helper functions for 10% markup
   const applyMarkup = (price: number) => Math.round(price * 1.1 * 100) / 100;
@@ -22,6 +26,13 @@ export function PizzariaSettings() {
         ...firestoreSettings,
         delivery_fee: firestoreSettings.delivery_fee ? removeMarkup(firestoreSettings.delivery_fee) : 0
       });
+
+      // Sync custom sound URL from settings
+      if (firestoreSettings.notification_sound_url) {
+        audioNotificationService.setCustomSoundUrl(firestoreSettings.notification_sound_url);
+        const parts = firestoreSettings.notification_sound_url.split('/');
+        setSoundFileName(decodeURIComponent(parts[parts.length - 1]));
+      }
     }
   }, [firestoreSettings]);
 
@@ -116,6 +127,47 @@ export function PizzariaSettings() {
     friday: 'Sexta-feira',
     saturday: 'Sábado',
     sunday: 'Domingo'
+  };
+
+  const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingSound(true);
+    setMessage(null);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `notification_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('notification-sounds')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('notification-sounds')
+        .getPublicUrl(fileName);
+
+      const publicUrl = urlData.publicUrl;
+
+      await updateSettings({ notification_sound_url: publicUrl });
+      updateField('notification_sound_url', publicUrl);
+
+      audioNotificationService.setCustomSoundUrl(publicUrl);
+      audioNotificationService.setVolume(1.0);
+      setAudioVolume(100);
+
+      setSoundFileName(file.name);
+      setMessage({ type: 'success', text: 'Som carregado com sucesso!' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error: any) {
+      console.error('Erro ao carregar som:', error);
+      setMessage({ type: 'error', text: `Erro ao carregar som: ${error.message}` });
+    } finally {
+      setIsUploadingSound(false);
+      if (soundInputRef.current) soundInputRef.current.value = '';
+    }
   };
 
   const handleToggleAudio = () => {
@@ -529,6 +581,37 @@ export function PizzariaSettings() {
                 />
               </div>
             )}
+
+            {/* Upload de som personalizado */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-primary-700">Som Personalizado</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => soundInputRef.current?.click()}
+                  disabled={isUploadingSound}
+                  className="inline-flex items-center px-4 py-2 border border-primary-300 rounded-md text-sm font-medium text-primary-700 bg-white hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploadingSound ? 'A carregar...' : 'Carregar som'}
+                </button>
+                <input
+                  ref={soundInputRef}
+                  type="file"
+                  accept=".mp3,.wav,.ogg,audio/mpeg,audio/wav,audio/ogg"
+                  onChange={handleSoundUpload}
+                  className="hidden"
+                />
+              </div>
+              {soundFileName && (
+                <p className="text-xs text-primary-500">
+                  Ficheiro atual: <span className="font-medium text-primary-700">{soundFileName}</span>
+                </p>
+              )}
+              <p className="text-xs text-primary-400">
+                Formatos aceites: MP3, WAV, OGG. O som será reproduzido ao volume máximo ao receber uma nova encomenda.
+              </p>
+            </div>
 
             <p className="text-sm text-primary-600">
               {audioEnabled
