@@ -31,6 +31,15 @@ const startApp = async () => {
 
 startApp();
 
+// TODO: REMOVE BEFORE PRODUCTION — dev helper
+if (sessionStorage.getItem('dev_test_user')) {
+  console.info(
+    '%c[DEV] Conta de teste ativa. Para limpar a sessão: sessionStorage.clear() + recarregar a página.',
+    'color: orange; font-weight: bold'
+  );
+}
+// END TODO
+
 // Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

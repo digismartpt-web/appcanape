@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Pizza, User, LogOut, ShoppingBag } from 'lucide-react';
+import { Menu, X, Store, User, LogOut, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { CartButton } from './CartButton';
 import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
@@ -9,6 +9,14 @@ import toast from 'react-hot-toast';
 
 interface NavbarProps {
   onCartClick: () => void;
+}
+
+function ProBadge() {
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500 text-white leading-none">
+      PRO
+    </span>
+  );
 }
 
 export function Navbar({ onCartClick }: NavbarProps) {
@@ -35,6 +43,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
     console.error('Erro ao verificar os horários:', error);
   }
   const canOrder = settings.is_open && openingHoursCheck.isOpen;
+  const isPro = user?.pro_validated === true;
 
   return (
     <nav className="bg-primary-800 text-white sticky top-0 z-40 shadow-md">
@@ -48,7 +57,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                 className="h-7 w-7 sm:h-8 sm:w-8 object-contain"
               />
             ) : (
-              <Pizza className="h-7 w-7 sm:h-8 sm:w-8 text-accent-400" />
+              <Store className="h-7 w-7 sm:h-8 sm:w-8 text-accent-400" />
             )}
             <span className="font-bold text-lg sm:text-xl truncate max-w-[150px] sm:max-w-none">{settings.name}</span>
           </Link>
@@ -64,10 +73,19 @@ export function Navbar({ onCartClick }: NavbarProps) {
             </div>
 
             <Link to="/menu" className="hover:text-accent-400 transition text-sm lg:text-base">Menu</Link>
+
+            {/* "Acesso Profissional" only for anonymous visitors */}
+            {!user && (
+              <Link to="/acesso-profissional" className="hover:text-accent-400 transition text-sm lg:text-base whitespace-nowrap">
+                Acesso Profissional
+              </Link>
+            )}
+
             {user ? (
               <>
-                <Link to="/profile" className="hover:text-accent-400 transition" title="Perfil">
+                <Link to="/profile" className="hover:text-accent-400 transition flex items-center gap-1.5" title="Perfil">
                   <User className="h-5 w-5" />
+                  {isPro && <ProBadge />}
                 </Link>
                 {user.role === 'client' && (
                   <>
@@ -83,9 +101,9 @@ export function Navbar({ onCartClick }: NavbarProps) {
                     Admin
                   </Link>
                 )}
-                {user.role === 'pizzeria' && (
-                  <Link to="/pizzaria" className="hover:text-accent-400 transition text-sm lg:text-base">
-                    Pizzaria
+                {user.role === 'boutique' && (
+                  <Link to="/boutique" className="hover:text-accent-400 transition text-sm lg:text-base">
+                    Boutique
                   </Link>
                 )}
                 <button
@@ -132,14 +150,27 @@ export function Navbar({ onCartClick }: NavbarProps) {
             >
               Menu
             </Link>
+
+            {/* "Acesso Profissional" only for anonymous visitors */}
+            {!user && (
+              <Link
+                to="/acesso-profissional"
+                className="block py-2 hover:text-accent-400 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                Acesso Profissional
+              </Link>
+            )}
+
             {user ? (
               <>
                 <Link
                   to="/profile"
-                  className="block py-2 hover:text-accent-400 transition"
+                  className="flex items-center gap-2 py-2 hover:text-accent-400 transition"
                   onClick={() => setIsOpen(false)}
                 >
                   Perfil
+                  {isPro && <ProBadge />}
                 </Link>
                 {user.role === 'client' && (
                   <>
@@ -170,13 +201,13 @@ export function Navbar({ onCartClick }: NavbarProps) {
                     Admin
                   </Link>
                 )}
-                {user.role === 'pizzeria' && (
+                {user.role === 'boutique' && (
                   <Link
-                    to="/pizzaria"
+                    to="/boutique"
                     className="block py-2 hover:text-accent-400 transition"
                     onClick={() => setIsOpen(false)}
                   >
-                    Pizzaria
+                    Boutique
                   </Link>
                 )}
                 <button

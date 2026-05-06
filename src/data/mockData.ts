@@ -1,60 +1,56 @@
-import type { Pizza } from '../types';
+import type { Product } from '../types';
 
-export const MOCK_PIZZAS: Pizza[] = [
+export const MOCK_PRODUCTS: Product[] = [
   {
     id: '1',
-    name: "Margherita",
-    description: "A clássica italiana com molho de tomate, mozzarella e manjericão fresco",
-    image_url: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=1350&q=80",
-    prices: {
-      small: 9,
-      medium: 12,
-      large: 15
-    },
-    ingredients: ["molho de tomate", "mozzarella", "manjericão"],
-    category: "classiques",
-    vegetarian: true
+    name: 'Sofá Conforto 1 Lugar',
+    description: 'Sofá compacto e confortável, ideal para espaços pequenos. Estrutura em madeira maciça, assento almofadado.',
+    image_url: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1350&q=80',
+    sizes: [{ code: 'unique', label: '1 lugar', price: 299 }],
+    features: ['Estrutura madeira maciça', 'Tecido anti-manchas', 'Pés cromados', 'Assento alta densidade'],
+    has_options: false,
+    options: [],
+    category_id: 'Sofás',
+    available: true,
+    stock: 5,
+    stock_alert_threshold: 2,
+    track_stock: false,
   },
   {
     id: '2',
-    name: "Regina",
-    description: "Molho de tomate, mozzarella, fiambre, cogumelos frescos",
-    image_url: "https://images.unsplash.com/photo-1594007654729-407eedc4be65?auto=format&fit=crop&w=1350&q=80",
-    prices: {
-      small: 11,
-      medium: 14,
-      large: 17
-    },
-    ingredients: ["molho de tomate", "mozzarella", "fiambre", "cogumelos"],
-    category: "classiques",
-    vegetarian: false
+    name: 'Sofá Lounge 2 Lugares',
+    description: 'Sofá 2 lugares com design moderno, tecido veludo suave ao toque. Disponível em várias cores.',
+    image_url: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&w=1350&q=80',
+    sizes: [{ code: 'unique', label: '2 lugares', price: 499 }],
+    features: ['Veludo premium', 'Almofada removível', 'Pés madeira natural', '2 almofadas incluídas'],
+    has_options: true,
+    options: ['Cinzento claro', 'Azul noite', 'Terracota'],
+    category_id: 'Sofás',
+    available: true,
+    stock: 3,
+    stock_alert_threshold: 1,
+    track_stock: false,
   },
   {
     id: '3',
-    name: "4 Queijos",
-    description: "Molho de tomate, mozzarella, gorgonzola, queijo de cabra, parmesão",
-    image_url: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1350&q=80",
-    prices: {
-      small: 12,
-      medium: 15,
-      large: 18
-    },
-    ingredients: ["molho de tomate", "mozzarella", "gorgonzola", "queijo de cabra", "parmesão"],
-    category: "fromages",
-    vegetarian: true
+    name: 'Cama de Casal 160x200',
+    description: 'Cama de casal com cabeceira almofadada, ripas de estrado incluídas. Cor branca ou cinzenta.',
+    image_url: 'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=1350&q=80',
+    sizes: [
+      { code: '160x200', label: '160×200', price: 699 },
+      { code: '180x200', label: '180×200', price: 799 },
+    ],
+    features: ['Cabeceira almofadada', 'Ripas incluídas', 'Montagem fácil', 'Cor à escolha'],
+    has_options: true,
+    options: ['Branco', 'Cinzento'],
+    category_id: 'Camas',
+    available: true,
+    stock: 2,
+    stock_alert_threshold: 1,
+    track_stock: false,
+    width_cm: 167,
+    depth_cm: 207,
+    height_cm: 105,
+    weight_kg: 45,
   },
-  {
-    id: '4',
-    name: "Vegetariana",
-    description: "Molho de tomate, mozzarella, pimentos, cebolas, cogumelos, azeitonas",
-    image_url: "https://images.unsplash.com/photo-1511689660979-10d2b1aada49?auto=format&fit=crop&w=1350&q=80",
-    prices: {
-      small: 11,
-      medium: 14,
-      large: 17
-    },
-    ingredients: ["molho de tomate", "mozzarella", "pimentos", "cebolas", "cogumelos", "azeitonas"],
-    category: "végétariennes",
-    vegetarian: true
-  }
 ];

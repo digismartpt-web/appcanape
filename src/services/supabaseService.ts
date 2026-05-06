@@ -1,21 +1,32 @@
-import { supabase } from '../lib/supabase';
-import type { Pizza, Order, User, OrderStatus, Extra, PromotionRule } from '../types';
+import { supabase, supabaseAuth } from '../lib/supabase';
+import type { Product, ProductImage, ProductSize, Order, User, OrderStatus, Extra, PromotionRule, ProRequest, ProRequestStatus } from '../types';
 
 export const COLLECTIONS = {
   USERS: 'users_profiles',
-  PIZZAS: 'pizzas',
+  PRODUCTS: 'products',
   ORDERS: 'orders',
   EXTRAS: 'extras',
   PROMOTIONS: 'promotions',
   BANNER_GALLERY: 'banner_gallery',
-  CATEGORIES: 'categories'
+  CATEGORIES: 'categories',
+  PRODUCT_IMAGES: 'product_images',
+  PRO_REQUESTS: 'pro_requests'
 } as const;
+
+const SCHEMA = 'canape_module';
+
+// TODO: REMOVE BEFORE PRODUCTION — mock all writes for test accounts
+const isTestUser = () => sessionStorage.getItem('dev_test_user') !== null;
+// END TODO
 
 // Users Service
 export const usersService = {
   async createUser(userId: string, userData: Partial<User>) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.USERS).upsert({
-      supabase_auth_id: userId,
+      id: userId,
       ...userData,
       updated_at: new Date().toISOString()
     });
@@ -23,212 +34,301 @@ export const usersService = {
   },
 
   async updateUser(userId: string, userData: Partial<User>) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.USERS).update({
       ...userData,
       updated_at: new Date().toISOString()
-    }).eq('supabase_auth_id', userId);
-
+    }).eq('id', userId);
     if (error) throw new Error(error.message);
   },
 
   async getUser(userId: string): Promise<User | null> {
-    const { data, error } = await supabase.from(COLLECTIONS.USERS).select('*').eq('supabase_auth_id', userId).maybeSingle();
+    const { data, error } = await supabase.from(COLLECTIONS.USERS).select('*').eq('id', userId).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) return null;
-    return {
-      id: data.supabase_auth_id,
-      ...data
-    } as User;
-  },
-
+    return { id: data.id, ...data } as User;
+  }
 };
 
-// Pizzas Service
-export const pizzasService = {
-  async createPizza(pizzaData: Omit<Pizza, 'id'>) {
-    // Note: RLS will check if user is admin/pizzaria
+// Products Service
+export const productsService = {
+  async createProduct(productData: Omit<Product, 'id'>) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return crypto.randomUUID();
+    // END TODO
     const cleanData: any = {
-      name: pizzaData.name || '',
-      description: pizzaData.description || '',
-      category: pizzaData.category || '',
-      image_url: pizzaData.image_url || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800',
-      ingredients: pizzaData.ingredients || [],
-      customizable: pizzaData.customizable || false,
-      max_custom_ingredients: pizzaData.max_custom_ingredients || 3,
-      custom_ingredients: pizzaData.custom_ingredients || [],
-      active: true,
+      name: productData.name || '',
+      description: productData.description || '',
+      category_id: productData.category_id || null,
+      image_url: productData.image_url || '',
+      features: productData.features || [],
+      has_options: productData.has_options || false,
+      options: productData.options || [],
+      available: productData.available !== false,
+      sizes: productData.sizes || [],
+      stock: productData.stock || 0,
+      stock_alert_threshold: productData.stock_alert_threshold || 2,
+      track_stock: productData.track_stock || false,
+      width_cm: productData.width_cm || null,
+      depth_cm: productData.depth_cm || null,
+      height_cm: productData.height_cm || null,
+      weight_kg: productData.weight_kg || null
     };
 
-    if (pizzaData.has_unique_price) {
-      // Quando é preço único, mapeamos para price_medium e limpamos os outros
-      cleanData.has_unique_price = true;
-      cleanData.price_medium = pizzaData.unique_price || 0;
-      cleanData.price_small = 0;
-      cleanData.price_large = 0;
-    } else {
-      cleanData.has_unique_price = false;
-      cleanData.price_small = pizzaData.prices?.small || 0;
-      cleanData.price_medium = pizzaData.prices?.medium || 0;
-      cleanData.price_large = pizzaData.prices?.large || 0;
-    }
-
-    const { data, error } = await supabase.from(COLLECTIONS.PIZZAS).insert(cleanData).select('id').single();
+    const { data, error } = await supabase.from(COLLECTIONS.PRODUCTS).insert(cleanData).select('id').single();
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('Produto criado mas sem resposta do servidor — verifique as permissões RLS');
     return data.id;
   },
 
-  async updatePizza(pizzaId: string, pizzaData: Partial<Pizza>) {
+  async updateProduct(productId: string, productData: Partial<Product>) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const cleanData: any = { updated_at: new Date().toISOString() };
-    if (pizzaData.name !== undefined) cleanData.name = pizzaData.name;
-    if (pizzaData.description !== undefined) cleanData.description = pizzaData.description;
-    if (pizzaData.category !== undefined) cleanData.category = pizzaData.category;
-    if (pizzaData.image_url !== undefined) cleanData.image_url = pizzaData.image_url;
-    if (pizzaData.ingredients !== undefined) cleanData.ingredients = pizzaData.ingredients;
-    if (pizzaData.active !== undefined) cleanData.active = pizzaData.active;
-    if (pizzaData.customizable !== undefined) cleanData.customizable = pizzaData.customizable;
-    if (pizzaData.max_custom_ingredients !== undefined) cleanData.max_custom_ingredients = pizzaData.max_custom_ingredients;
-    if (pizzaData.custom_ingredients !== undefined) cleanData.custom_ingredients = pizzaData.custom_ingredients;
+    if (productData.name !== undefined) cleanData.name = productData.name;
+    if (productData.description !== undefined) cleanData.description = productData.description;
+    if (productData.category_id !== undefined) cleanData.category_id = productData.category_id;
+    if (productData.image_url !== undefined) cleanData.image_url = productData.image_url;
+    if (productData.features !== undefined) cleanData.features = productData.features;
+    if (productData.available !== undefined) cleanData.available = productData.available;
+    if (productData.has_options !== undefined) cleanData.has_options = productData.has_options;
+    if (productData.options !== undefined) cleanData.options = productData.options;
+    if (productData.sizes !== undefined) cleanData.sizes = productData.sizes;
+    if (productData.stock !== undefined) cleanData.stock = productData.stock;
+    if (productData.stock_alert_threshold !== undefined) cleanData.stock_alert_threshold = productData.stock_alert_threshold;
+    if (productData.track_stock !== undefined) cleanData.track_stock = productData.track_stock;
+    if (productData.width_cm !== undefined) cleanData.width_cm = productData.width_cm;
+    if (productData.depth_cm !== undefined) cleanData.depth_cm = productData.depth_cm;
+    if (productData.height_cm !== undefined) cleanData.height_cm = productData.height_cm;
+    if (productData.weight_kg !== undefined) cleanData.weight_kg = productData.weight_kg;
 
-    if (pizzaData.has_unique_price !== undefined) {
-      cleanData.has_unique_price = pizzaData.has_unique_price;
-    }
-
-    if (cleanData.has_unique_price === true) {
-      // Forçar limpeza dos outros tamanhos se estamos em modo preço único
-      cleanData.price_small = 0;
-      cleanData.price_large = 0;
-      if (pizzaData.unique_price !== undefined) {
-        cleanData.price_medium = pizzaData.unique_price;
-      }
-    } else if (cleanData.has_unique_price === false || (cleanData.has_unique_price === undefined && pizzaData.prices !== undefined)) {
-      // Estamos em modo preços por tamanho ou atualizando os preços
-      if (pizzaData.prices !== undefined) {
-        cleanData.price_small = pizzaData.prices.small || 0;
-        cleanData.price_medium = pizzaData.prices.medium || 0;
-        cleanData.price_large = pizzaData.prices.large || 0;
-      }
-    }
-
-    const { error } = await supabase.from(COLLECTIONS.PIZZAS).update(cleanData).eq('id', pizzaId);
+    const { error } = await supabase.from(COLLECTIONS.PRODUCTS).update(cleanData).eq('id', productId);
     if (error) throw new Error(error.message);
   },
 
-  async deletePizza(pizzaId: string) {
-    const { error } = await supabase.from(COLLECTIONS.PIZZAS).delete().eq('id', pizzaId);
+  async deleteProduct(productId: string) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const { error } = await supabase.from(COLLECTIONS.PRODUCTS).delete().eq('id', productId);
     if (error) throw new Error(error.message);
   },
 
-  mapPizza(doc: any): Pizza {
+  mapProduct(doc: any): Product {
+    let sizes: ProductSize[] = [];
+    if (Array.isArray(doc.sizes) && doc.sizes.length > 0) {
+      sizes = doc.sizes as ProductSize[];
+    } else if (doc.price_medium || doc.price_small || doc.price_large) {
+      // Backward compat: migrate old price fields to sizes array
+      if (doc.has_unique_price && doc.price_medium) {
+        sizes = [{ code: 'm', label: 'Unique', price: doc.price_medium }];
+      } else {
+        if (doc.price_small > 0) sizes.push({ code: 's', label: '1 place', price: doc.price_small });
+        if (doc.price_medium > 0) sizes.push({ code: 'm', label: '2 places', price: doc.price_medium });
+        if (doc.price_large > 0) sizes.push({ code: 'l', label: '3 places', price: doc.price_large });
+      }
+    }
     return {
       id: doc.id,
       name: doc.name,
       description: doc.description,
-      category: doc.category,
-      image_url: doc.image_url,
-      has_unique_price: doc.has_unique_price,
-      unique_price: doc.has_unique_price ? doc.price_medium : undefined,
-      prices: {
-        small: doc.price_small,
-        medium: doc.price_medium,
-        large: doc.price_large
-      },
-      customizable: doc.customizable,
-      max_custom_ingredients: doc.max_custom_ingredients,
-      custom_ingredients: doc.custom_ingredients,
-      ingredients: doc.ingredients,
-      active: doc.active,
+      category_id: doc.category_id || undefined,
+      image_url: doc.image_url || undefined,
+      features: doc.features || [],
+      has_options: doc.has_options || false,
+      options: doc.options || [],
+      available: doc.available !== false,
+      sizes,
+      sizes_pro: Array.isArray(doc.sizes_pro) && doc.sizes_pro.length > 0 ? (doc.sizes_pro as ProductSize[]) : undefined,
+      pro_discount_percent: doc.pro_discount_percent ?? 0,
+      pro_price_override: doc.pro_price_override ?? false,
+      stock: doc.stock ?? 0,
+      stock_alert_threshold: doc.stock_alert_threshold ?? 2,
+      track_stock: doc.track_stock ?? false,
+      width_cm: doc.width_cm || undefined,
+      depth_cm: doc.depth_cm || undefined,
+      height_cm: doc.height_cm || undefined,
+      weight_kg: doc.weight_kg || undefined,
       created_at: doc.created_at
     };
   },
 
-  async getAllPizzas(): Promise<Pizza[]> {
-    const { data, error } = await supabase.from(COLLECTIONS.PIZZAS).select('*').order('created_at', { ascending: false });
+  async getAllProducts(): Promise<Product[]> {
+    const { data, error } = await supabase.from(COLLECTIONS.PRODUCTS).select('*').order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return (data || []).filter(p => p.active !== false).map(this.mapPizza);
+    return (data || []).filter(p => p.available !== false).map(this.mapProduct);
   },
 
-  async getAllPizzasForAdmin(): Promise<Pizza[]> {
-    const { data, error } = await supabase.from(COLLECTIONS.PIZZAS).select('*').order('created_at', { ascending: false });
-    if (error) throw new Error(error.message);
-    return (data || []).map(this.mapPizza);
+  async decrementStockForOrder(items: { product_id: string; quantity: number }[]) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    for (const item of items) {
+      const { data } = await supabase
+        .from(COLLECTIONS.PRODUCTS)
+        .select('stock, track_stock')
+        .eq('id', item.product_id)
+        .maybeSingle();
+      if (data?.track_stock) {
+        const newStock = Math.max(0, (data.stock ?? 0) - item.quantity);
+        await supabase.from(COLLECTIONS.PRODUCTS)
+          .update({ stock: newStock, updated_at: new Date().toISOString() })
+          .eq('id', item.product_id);
+      }
+    }
   },
 
-  subscribeToActivePizzas(callback: (pizzas: Pizza[]) => void) {
-    // First load
-    supabase.from(COLLECTIONS.PIZZAS).select('*').eq('active', true).order('created_at', { ascending: false }).then(({ data }) => {
-      if (data) callback(data.map(this.mapPizza));
+  async getAllProductsForAdmin(): Promise<Product[]> {
+    const { data, error } = await supabase.from(COLLECTIONS.PRODUCTS).select('*').order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data || []).map(this.mapProduct);
+  },
+
+  subscribeToActiveProducts(callback: (products: Product[]) => void) {
+    supabase.from(COLLECTIONS.PRODUCTS).select('*').eq('available', true).order('created_at', { ascending: false }).then(({ data }) => {
+      if (data) callback(data.map(this.mapProduct));
     });
 
-    const channelId = `active_pizzas_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const channelId = `active_products_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.PIZZAS }, (payload) => {
-        console.log('🔔 [Realtime] Mudança em pizzas (cliente):', payload.eventType);
-        supabase.from(COLLECTIONS.PIZZAS).select('*').eq('active', true).order('created_at', { ascending: false }).then(({ data }) => {
-          if (data) callback(data.map(this.mapPizza));
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.PRODUCTS }, () => {
+        supabase.from(COLLECTIONS.PRODUCTS).select('*').eq('available', true).order('created_at', { ascending: false }).then(({ data }) => {
+          if (data) callback(data.map(this.mapProduct));
         });
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição ${channelId}:`, status);
-      });
+      }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
   },
 
-  subscribeToAllPizzas(callback: (pizzas: Pizza[]) => void) {
-    supabase.from(COLLECTIONS.PIZZAS).select('*').order('created_at', { ascending: false }).then(({ data }) => {
-      if (data) callback(data.map(this.mapPizza));
+  subscribeToAllProducts(callback: (products: Product[]) => void) {
+    supabase.from(COLLECTIONS.PRODUCTS).select('*').order('created_at', { ascending: false }).then(({ data }) => {
+      if (data) callback(data.map(this.mapProduct));
     });
 
-    const channelId = `all_pizzas_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const channelId = `all_products_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.PIZZAS }, (payload) => {
-        console.log('🔔 [Realtime] Mudança em todas as pizzas:', payload.eventType);
-        supabase.from(COLLECTIONS.PIZZAS).select('*').order('created_at', { ascending: false }).then(({ data }) => {
-          if (data) callback(data.map(this.mapPizza));
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.PRODUCTS }, () => {
+        supabase.from(COLLECTIONS.PRODUCTS).select('*').order('created_at', { ascending: false }).then(({ data }) => {
+          if (data) callback(data.map(this.mapProduct));
         });
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição ${channelId}:`, status);
-      });
+      }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
+  }
+};
+
+// Backward compat alias
+export const pizzasService = productsService;
+
+// Product Images Service
+export const productImagesService = {
+  async getProductImages(productId: string): Promise<ProductImage[]> {
+    const { data, error } = await supabase
+      .from(COLLECTIONS.PRODUCT_IMAGES)
+      .select('*')
+      .eq('product_id', productId)
+      .order('position', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data || []) as ProductImage[];
+  },
+
+  async addProductImage(productId: string, imageUrl: string, position: number = 0): Promise<string> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return crypto.randomUUID();
+    // END TODO
+    const { data, error } = await supabase
+      .from(COLLECTIONS.PRODUCT_IMAGES)
+      .insert({ product_id: productId, image_url: imageUrl, position })
+      .select('id')
+      .single();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error('Imagem inserida mas sem resposta do servidor — verifique as permissões RLS');
+    return data.id;
+  },
+
+  async deleteProductImage(imageId: string): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const { error } = await supabase
+      .from(COLLECTIONS.PRODUCT_IMAGES)
+      .delete()
+      .eq('id', imageId);
+    if (error) throw new Error(error.message);
+  },
+
+  async reorderImages(productId: string, imageIds: string[]): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    for (let i = 0; i < imageIds.length; i++) {
+      await supabase
+        .from(COLLECTIONS.PRODUCT_IMAGES)
+        .update({ position: i })
+        .eq('id', imageIds[i])
+        .eq('product_id', productId);
+    }
+  },
+
+  async reorderProductImages(images: { id: string; position: number }[]): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    for (const img of images) {
+      await supabase
+        .from(COLLECTIONS.PRODUCT_IMAGES)
+        .update({ position: img.position })
+        .eq('id', img.id);
+    }
   }
 };
 
 // Orders Service
 export const ordersService = {
   async createOrder(orderData: any): Promise<string> {
-    const orderNumber = 20000 + Math.floor(Date.now() / 1000) % 100000;
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return crypto.randomUUID();
+    // END TODO
+    const orderNumber = (20000 + Math.floor(Date.now() / 1000) % 100000).toString();
 
     const cleanData: any = {
-      ...orderData,
-      user_supabase_id: orderData.user_id,
-      user_email: orderData.user?.email || 'N/A',
-      user_full_name: orderData.user?.full_name || 'Anonyme',
-      user_phone: orderData.user?.phone || '',
-      user_address: orderData.user?.address || '',
-      order_number: orderNumber.toString(),
+      order_number: orderNumber,
+      user_id: orderData.user_id,
+      customer_name: orderData.user?.full_name || 'Anonyme',
+      customer_email: orderData.user?.email || '',
+      customer_phone: orderData.user?.phone || '',
+      customer_address: orderData.user?.address || '',
+      pickup_address: orderData.pickup_address || '',
+      delivery_type: orderData.delivery_type || 'pickup',
+      delivery_address: orderData.delivery_address || null,
+      delivery_fee: orderData.delivery_fee || 0,
+      delivery_distance: orderData.delivery_distance || null,
+      items: orderData.items || [],
+      total: orderData.total || 0,
+      commission_total: orderData.commission_total || 0,
+      status: orderData.status || 'pending',
       updated_at: new Date().toISOString()
     };
-    
-    // Remover o objeto 'user' e o 'user_id' antes de inserir (não são colunas)
-    delete cleanData.user;
-    delete cleanData.user_id;
 
     const { data, error } = await supabase.from(COLLECTIONS.ORDERS).insert(cleanData).select('id').single();
     if (error) {
-      console.error('❌ Erro no Supabase Insert:', error);
+      console.error('❌ Erreur Supabase Insert:', error);
       throw new Error(error.message);
     }
+    if (!data) throw new Error('Encomenda criada mas sem resposta do servidor — verifique as permissões RLS');
     return data.id;
   },
 
   async createStripeSession(orderId: string, orderItems: any[], userEmail: string) {
-    // Utiliser fetch direct pour mieux capturer les erreurs détaillées du serveur
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     const functionUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabaseAuth.auth.getSession();
       const accessToken = sessionData.session?.access_token || supabaseAnonKey;
 
       const response = await fetch(functionUrl, {
@@ -249,99 +349,101 @@ export const ordersService = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erro bruto da Edge Function:', errorText);
+        console.error('❌ Erreur Edge Function:', errorText);
         try {
           const errorJson = JSON.parse(errorText);
-          throw new Error(errorJson.error || errorJson.details || errorJson.message || `Erro ${response.status}: ${errorText}`);
+          throw new Error(errorJson.error || errorJson.details || errorJson.message || `Erreur ${response.status}: ${errorText}`);
         } catch (e) {
-          throw new Error(`Erro ${response.status}: ${errorText.substring(0, 100)}`);
+          throw new Error(`Erreur ${response.status}: ${errorText.substring(0, 100)}`);
         }
       }
 
       const data = await response.json();
       return data;
     } catch (error: any) {
-      console.error('❌ Erro ao chamar Edge Function:', error);
-      throw new Error(error.message || 'Falha ao processar pagamento');
+      console.error('❌ Erreur appel Edge Function:', error);
+      throw new Error(error.message || 'Échec du traitement du paiement');
     }
   },
 
   async confirmPayment(orderId: string): Promise<boolean> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return true;
+    // END TODO
     try {
       const { error } = await supabase.from(COLLECTIONS.ORDERS).update({
-        status: 'en_attente',
+        status: 'confirmed',
+        payment_status: 'paid',
         updated_at: new Date().toISOString()
       }).eq('id', orderId);
-      
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('❌ Erro ao confirmar pagamento:', error);
+      console.error('❌ Erreur confirmation paiement:', error);
       return false;
     }
   },
 
-  async updateOrderStatus(orderId: string, status: OrderStatus, estimatedTime?: string, cancellationReason?: string) {
+  async updateOrderStatus(orderId: string, status: OrderStatus, cancellationReason?: string) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const updateData: any = { status, updated_at: new Date().toISOString() };
-    if (estimatedTime) updateData.estimated_delivery_time = estimatedTime;
     if (cancellationReason) updateData.cancellation_reason = cancellationReason;
-    
+    if (status === 'shipped') updateData.shipped_at = new Date().toISOString();
+    if (status === 'delivered') updateData.delivered_at = new Date().toISOString();
     const { error } = await supabase.from(COLLECTIONS.ORDERS).update(updateData).eq('id', orderId);
     if (error) throw new Error(error.message);
   },
 
-  async updateOrderPreparationTime(orderId: string, preparationTime: number) {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ 
-      preparation_time: preparationTime, 
-      updated_at: new Date().toISOString() 
-    }).eq('id', orderId); 
+  async updateOrderDeliveryDate(orderId: string, estimatedDeliveryDate: string) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({
+      estimated_delivery_date: estimatedDeliveryDate,
+      updated_at: new Date().toISOString()
+    }).eq('id', orderId);
     if (error) throw new Error(error.message);
   },
 
-  async updateOrderDeliveryTime(orderId: string, deliveryTime: number, distance?: number) {
-    const cleanData: any = { 
-      status: 'em_entrega', 
-      delivery_time: deliveryTime,
-      delivery_distance: distance,
-      updated_at: new Date().toISOString() 
-    };
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update(cleanData).eq('id', orderId);
+  async updateStock(productId: string, newStock: number) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const { error } = await supabase.from(COLLECTIONS.PRODUCTS).update({
+      stock: newStock,
+      updated_at: new Date().toISOString()
+    }).eq('id', productId);
+    if (error) throw new Error(error.message);
+  },
+
+  async updateOrderPreparationTime(orderId: string, preparationTime: number) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({
+      preparation_time: preparationTime,
+      updated_at: new Date().toISOString()
+    }).eq('id', orderId);
     if (error) throw new Error(error.message);
   },
 
   async deleteOrder(orderId: string) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.ORDERS).delete().eq('id', orderId);
-    if (error) throw new Error('Falha ao apagar encomenda: ' + error.message);
-  },
-
-  async updateEstimatedDeliveryTime(orderId: string, estimatedTime: string) {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ 
-      estimated_delivery_time: estimatedTime,
-      updated_at: new Date().toISOString() 
-    }).eq('id', orderId);
-    if (error) throw new Error(error.message);
-  },
-
-  async confirmEstimatedDeliveryTime(orderId: string) {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ 
-      estimated_delivery_time_confirmed: true,
-      updated_at: new Date().toISOString() 
-    }).eq('id', orderId);
-    if (error) throw new Error(error.message);
-  },
-
-  async requestLaterDeliveryTime(orderId: string, requestedTime: string) {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ 
-      requested_later_time: requestedTime,
-      updated_at: new Date().toISOString() 
-    }).eq('id', orderId);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error('Erreur suppression commande : ' + error.message);
   },
 
   async hideOrderForAdmin(orderId: string) {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ 
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({
       admin_hidden: true,
-      updated_at: new Date().toISOString() 
+      updated_at: new Date().toISOString()
     }).eq('id', orderId);
     if (error) throw new Error(error.message);
   },
@@ -349,95 +451,86 @@ export const ordersService = {
   mapOrder(doc: any): Order {
     return {
       id: doc.id,
-      user_id: doc.user_supabase_id,
+      user_id: doc.user_id,
       user: {
-        id: doc.user_supabase_id,
-        email: doc.user_email,
-        full_name: doc.user_full_name,
-        phone: doc.user_phone,
-        address: doc.user_address || '',
-        role: 'client' // approximated
+        id: doc.user_id,
+        email: doc.customer_email || '',
+        full_name: doc.customer_name || '',
+        phone: doc.customer_phone || '',
+        address: doc.customer_address || '',
+        role: 'client'
       },
-      pickup_address: doc.pickup_address || undefined,
+      pickup_address: doc.pickup_address || '',
       delivery_type: doc.delivery_type as 'delivery' | 'pickup',
       delivery_address: doc.delivery_address || undefined,
       delivery_distance: doc.delivery_distance,
-      items: doc.items,
-      total: doc.total || doc.total_amount || doc.amount || 0,
+      items: doc.items || [],
+      total: doc.total || 0,
+      delivery_fee: doc.delivery_fee || 0,
       status: doc.status as OrderStatus,
-      order_number: parseInt(doc.order_number),
+      payment_status: doc.payment_status || undefined,
+      order_number: parseInt(doc.order_number) || 0,
       created_at: doc.created_at,
-      pizzeria_hidden: doc.pizzeria_hidden,
+      boutique_hidden: doc.boutique_hidden,
       admin_hidden: doc.admin_hidden,
       cancellation_reason: doc.cancellation_reason,
       preparation_time: doc.preparation_time,
-      delivery_time: doc.delivery_time,
-      estimated_delivery_time: doc.estimated_delivery_time,
-      estimated_delivery_time_confirmed: doc.estimated_delivery_time_confirmed,
-      requested_later_time: doc.requested_later_time,
-      delivery_fee: doc.delivery_fee,
       commission_total: doc.commission_total,
+      estimated_delivery_days: doc.estimated_delivery_days || undefined,
+      estimated_delivery_date: doc.estimated_delivery_date || undefined,
+      shipped_at: doc.shipped_at || undefined,
+      delivered_at: doc.delivered_at || undefined,
       updated_at: doc.updated_at
     };
   },
 
   async getUserOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase.from(COLLECTIONS.ORDERS).select('*').eq('user_supabase_id', userId).order('created_at', { ascending: false });
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (!userId || userId.startsWith('test-')) return [];
+    // END TODO
+    const { data, error } = await supabase.from(COLLECTIONS.ORDERS).select('*').eq('user_id', userId).order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     return (data || []).map(this.mapOrder);
   },
 
   async getAllOrders(): Promise<Order[]> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (sessionStorage.getItem('dev_test_user')) return [];
+    // END TODO
     const { data, error } = await supabase.from(COLLECTIONS.ORDERS).select('*').order('updated_at', { ascending: false });
     if (error) throw new Error(error.message);
     return (data || []).map(this.mapOrder);
   },
 
   subscribeToUserOrders(userId: string, callback: (orders: Order[]) => void) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (!userId || userId.startsWith('test-')) {
+      callback([]);
+      return () => {};
+    }
+    // END TODO
     this.getUserOrders(userId).then(callback);
 
-    const channel = supabase.channel(`orders_${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.ORDERS, filter: `user_supabase_id=eq.${userId}` }, (payload) => {
-        console.log(`🔔 [Realtime] Mudança nas encomendas do utilizador ${userId}:`, payload);
+    const channel = supabase.channel(`orders_user_${userId}`)
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.ORDERS, filter: `user_id=eq.${userId}` }, () => {
         this.getUserOrders(userId).then(callback);
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição orders_${userId}:`, status);
-      });
+      }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
   },
 
   subscribeToAllOrders(callback: (orders: Order[]) => void) {
     const channelId = `orders_all_${Date.now()}`;
-    console.log(`📡 [SupabaseService] Iniciando subscribeToAllOrders (ID: ${channelId})...`);
-    
-    // Fetch inicial imediato
     this.getAllOrders().then(callback);
 
     const channel = supabase.channel(channelId)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: COLLECTIONS.ORDERS 
-      }, (payload) => {
-        const newId = (payload.new as any)?.id;
-        console.log(`🔔 [Realtime] Mudança detetada no canal ${channelId}:`, payload.eventType, newId);
-        // Re-fetch completo para garantir dados mapeados corretamente
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.ORDERS }, () => {
         this.getAllOrders().then(callback);
-      })
-      .subscribe((status, err) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição ${channelId}:`, status);
-        if (err) console.error(`❌ [Realtime] Erro na subscrição ${channelId}:`, err);
-        
-        if (status === 'CHANNEL_ERROR') {
-          console.error('❌ [Realtime] Erro crítico. A tabela "orders" pode não ter o Realtime ativado no Supabase Dashboard (Replication).');
-        }
+      }).subscribe((status, err) => {
+        if (err) console.error(`❌ [Realtime] Erreur canal ${channelId}:`, err);
       });
 
-    return () => { 
-      console.log(`🔌 [Realtime] Removendo canal ${channelId}`);
-      supabase.removeChannel(channel); 
-    };
+    return () => { supabase.removeChannel(channel); };
   },
 
   subscribeToOrdersByStatus(status: OrderStatus, callback: (orders: Order[]) => void) {
@@ -446,7 +539,7 @@ export const ordersService = {
     });
 
     const channel = supabase.channel(`orders_${status}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.ORDERS, filter: `status=eq.${status}` }, () => {
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.ORDERS, filter: `status=eq.${status}` }, () => {
         supabase.from(COLLECTIONS.ORDERS).select('*').eq('status', status).order('created_at', { ascending: false }).then(({ data }) => {
           if (data) callback(data.map(this.mapOrder));
         });
@@ -456,7 +549,10 @@ export const ordersService = {
   },
 
   async deleteAllOrders() {
-    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ pizzeria_hidden: true }).not('id', 'is', null);
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ boutique_hidden: true }).not('id', 'is', null);
     if (error) throw new Error(error.message);
   }
 };
@@ -464,17 +560,27 @@ export const ordersService = {
 // Extras Service
 export const extrasService = {
   async createExtra(extraData: Omit<Extra, 'id'>) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return crypto.randomUUID();
+    // END TODO
     const { data, error } = await supabase.from(COLLECTIONS.EXTRAS).insert({ ...extraData, active: true }).select('id').single();
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('Extra criado mas sem resposta do servidor — verifique as permissões RLS');
     return data.id;
   },
 
   async updateExtra(extraId: string, extraData: Partial<Extra>) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.EXTRAS).update({ ...extraData, updated_at: new Date().toISOString() }).eq('id', extraId);
     if (error) throw new Error(error.message);
   },
 
   async deleteExtra(extraId: string) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.EXTRAS).delete().eq('id', extraId);
     if (error) throw new Error(error.message);
   },
@@ -495,49 +601,47 @@ export const extrasService = {
     this.getAllExtras().then(callback);
     const channelId = `extras_active_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.EXTRAS }, (payload) => {
-        console.log('🔔 [Realtime] Mudança ativa em extras detetada:', payload.eventType);
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.EXTRAS }, () => {
         this.getAllExtras().then(callback);
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição ${channelId}:`, status);
-      });
-    return () => { 
-      console.log(`🔌 [Realtime] Removendo canal ${channelId}`);
-      supabase.removeChannel(channel); 
-    };
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
   },
 
   subscribeToAllExtras(callback: (extras: Extra[]) => void) {
     this.getAllExtrasForAdmin().then(callback);
     const channelId = `extras_all_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.EXTRAS }, (payload) => {
-        console.log('🔔 [Realtime] Mudança total em extras detetada:', payload.eventType);
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.EXTRAS }, () => {
         this.getAllExtrasForAdmin().then(callback);
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição ${channelId}:`, status);
-      });
-    return () => { 
-      console.log(`🔌 [Realtime] Removendo canal ${channelId}`);
-      supabase.removeChannel(channel); 
-    };
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
   }
 };
 
 // Categories Service
 export const categoriesService = {
   async createCategory(categoryData: { name: string; description?: string; active: boolean }) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return crypto.randomUUID();
+    // END TODO
     const { data, error } = await supabase.from(COLLECTIONS.CATEGORIES).insert(categoryData).select('id').single();
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('Categoria criada mas sem resposta do servidor — verifique as permissões RLS');
     return data.id;
   },
 
   async updateCategory(categoryId: string, categoryData: Partial<{ name: string; description?: string; active: boolean }>) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.CATEGORIES).update({ ...categoryData, updated_at: new Date().toISOString() }).eq('id', categoryId);
     if (error) throw new Error(error.message);
   },
 
   async deleteCategory(categoryId: string) {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.CATEGORIES).delete().eq('id', categoryId);
     if (error) throw new Error(error.message);
   },
@@ -550,27 +654,22 @@ export const categoriesService = {
 
   subscribeToCategories(callback: (categories: any[]) => void) {
     this.getAllCategories().then(callback);
-    
     const channelId = `categories_all_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.CATEGORIES }, (payload) => {
-        console.log('🔔 [Realtime] Mudança em categorias:', payload.eventType);
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.CATEGORIES }, () => {
         this.getAllCategories().then(callback);
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição ${channelId}:`, status);
-      });
-      
+      }).subscribe();
     return () => { supabase.removeChannel(channel); };
   }
 };
 
 // Promotions Service
 export const promotionsService = {
-  mapPromotion(doc: any): PromotionRule {
+  mapPromotion(doc: any) {
     return {
       id: doc.id,
       name: doc.name,
-      description: doc.description,
+      description: doc.description || '',
       active: doc.active,
       type: doc.type,
       buyCondition: {
@@ -592,8 +691,8 @@ export const promotionsService = {
     };
   },
 
-  unmapPromotion(promo: Partial<PromotionRule>): any {
-    const unmapped: any = { 
+  unmapPromotion(promo: any): any {
+    const unmapped: any = {
       name: promo.name,
       description: promo.description,
       active: promo.active,
@@ -631,17 +730,11 @@ export const promotionsService = {
 
   subscribeToActivePromotions(callback: (promotions: PromotionRule[]) => void) {
     this.getActivePromotions().then(callback);
-    
-    const channelId = `promotions_active_listener_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const channelId = `promotions_active_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase.channel(channelId)
-      // Escutamos TODAS as mudanças na tabela para apanhar desativações (que sairiam do filtro active=eq.true)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.PROMOTIONS }, (payload) => {
-        console.log('🔔 [Realtime] Mudança detetada para promoções do cliente:', payload.eventType);
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.PROMOTIONS }, () => {
         this.getActivePromotions().then(callback);
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição do cliente ${channelId}:`, status);
-      });
-      
+      }).subscribe();
     return () => { supabase.removeChannel(channel); };
   },
 
@@ -653,27 +746,29 @@ export const promotionsService = {
 
   subscribeToAllPromotions(callback: (promotions: PromotionRule[]) => void) {
     this.getAllPromotions().then(callback);
-    
     const channelId = `promotions_all_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.PROMOTIONS }, (payload) => {
-        console.log('🔔 [Realtime] Mudança em todas as promoções:', payload.eventType);
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.PROMOTIONS }, () => {
         this.getAllPromotions().then(callback);
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição ${channelId}:`, status);
-      });
-      
+      }).subscribe();
     return () => { supabase.removeChannel(channel); };
   },
 
   async addPromotion(promotion: Omit<PromotionRule, 'id'>): Promise<string> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return crypto.randomUUID();
+    // END TODO
     const unmapped = this.unmapPromotion(promotion);
     const { data, error } = await supabase.from(COLLECTIONS.PROMOTIONS).insert(unmapped).select('id').single();
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('Promoção criada mas sem resposta do servidor — verifique as permissões RLS');
     return data.id;
   },
 
   async updatePromotion(id: string, promotion: Partial<PromotionRule>): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const unmapped = this.unmapPromotion(promotion);
     unmapped.updated_at = new Date().toISOString();
     const { error } = await supabase.from(COLLECTIONS.PROMOTIONS).update(unmapped).eq('id', id);
@@ -681,6 +776,9 @@ export const promotionsService = {
   },
 
   async deletePromotion(id: string): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.PROMOTIONS).delete().eq('id', id);
     if (error) throw new Error(error.message);
   }
@@ -691,53 +789,158 @@ export const bannerGalleryService = {
   async getAllImages(): Promise<{ id: string; url: string; name: string; created_at: string }[]> {
     const { data, error } = await supabase.from(COLLECTIONS.BANNER_GALLERY).select('*').order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return (data || []).map(d => ({ id: d.id, url: d.image_url, name: d.name, created_at: d.created_at }));
+    return (data || []).map(d => ({ id: d.id, url: d.image_url, name: d.name || '', created_at: d.created_at }));
   },
 
   async addImage(url: string, name: string): Promise<string> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return crypto.randomUUID();
+    // END TODO
     const { data, error } = await supabase.from(COLLECTIONS.BANNER_GALLERY).insert({ image_url: url, name }).select('id').single();
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('Imagem inserida mas sem resposta do servidor — verifique as permissões RLS');
     return data.id;
   },
 
   async deleteImage(id: string): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
     const { error } = await supabase.from(COLLECTIONS.BANNER_GALLERY).delete().eq('id', id);
     if (error) throw new Error(error.message);
   },
 
   subscribeToGallery(callback: (images: any[]) => void, errorCallback?: (error: any) => void) {
     this.getAllImages().then(callback).catch(e => errorCallback && errorCallback(e));
-    
     const channelId = `banner_gallery_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: COLLECTIONS.BANNER_GALLERY }, (payload) => {
-        console.log('🔔 [Realtime] Mudança na galeria:', payload.eventType);
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.BANNER_GALLERY }, () => {
         this.getAllImages().then(callback).catch(e => errorCallback && errorCallback(e));
-      }).subscribe((status) => {
-        console.log(`🛰️ [Realtime] Estado da subscrição ${channelId}:`, status);
-      });
-      
+      }).subscribe();
     return () => { supabase.removeChannel(channel); };
+  }
+};
+
+// Pro pricing helper
+export function getProPrice(product: Product, sizeCode: string, userDiscount: number): number {
+  if (product.pro_price_override && product.sizes_pro && product.sizes_pro.length > 0) {
+    const proSize = product.sizes_pro.find(s => s.code === sizeCode);
+    if (proSize) return proSize.price;
+  }
+  const normalSize = product.sizes.find(s => s.code === sizeCode);
+  if (!normalSize) return 0;
+  const discount = Math.max(product.pro_discount_percent ?? 0, userDiscount);
+  return normalSize.price * (1 - discount / 100);
+}
+
+// Pro Requests Service
+export const proRequestsService = {
+  async fetchProRequests(status?: ProRequestStatus): Promise<ProRequest[]> {
+    let query = supabase
+      .from(COLLECTIONS.PRO_REQUESTS)
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (status) query = (query as any).eq('status', status);
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return (data || []) as ProRequest[];
+  },
+
+  async fetchProClients(): Promise<User[]> {
+    const { data, error } = await supabase
+      .from(COLLECTIONS.USERS)
+      .select('*')
+      .eq('pro_validated', true);
+    if (error) throw new Error(error.message);
+    return (data || []) as User[];
+  },
+
+  async submitProRequest(data: {
+    user_id?: string;
+    company_name: string;
+    nif: string;
+    email: string;
+    phone?: string;
+    address?: string;
+    activity_sector?: string;
+    message?: string;
+  }): Promise<string> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return crypto.randomUUID();
+    // END TODO
+    const { data: result, error } = await supabase
+      .from(COLLECTIONS.PRO_REQUESTS)
+      .insert({ ...data, status: 'pending', auto_verification_attempted: false })
+      .select('id')
+      .single();
+    if (error) throw new Error(error.message);
+    if (!result) throw new Error('Pedido criado mas sem resposta do servidor');
+    return result.id;
+  },
+
+  async approveProRequest(requestId: string, userId: string, discountPercent: number, reviewedBy?: string): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const now = new Date().toISOString();
+    const { error: reqError } = await supabase
+      .from(COLLECTIONS.PRO_REQUESTS)
+      .update({ status: 'approved', reviewed_by: reviewedBy, reviewed_at: now, updated_at: now })
+      .eq('id', requestId);
+    if (reqError) throw new Error(reqError.message);
+    const { error: userError } = await supabase
+      .from(COLLECTIONS.USERS)
+      .update({ pro_validated: true, pro_discount_percent: discountPercent, pro_validated_at: now, pro_validated_by: reviewedBy, role: 'pro', updated_at: now })
+      .eq('id', userId);
+    if (userError) throw new Error(userError.message);
+  },
+
+  async rejectProRequest(requestId: string, reason: string, reviewedBy?: string): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from(COLLECTIONS.PRO_REQUESTS)
+      .update({ status: 'rejected', rejection_reason: reason, reviewed_by: reviewedBy, reviewed_at: now, updated_at: now })
+      .eq('id', requestId);
+    if (error) throw new Error(error.message);
+  },
+
+  async updateProDiscount(userId: string, discountPercent: number): Promise<void> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return;
+    // END TODO
+    const { error } = await supabase
+      .from(COLLECTIONS.USERS)
+      .update({ pro_discount_percent: discountPercent, updated_at: new Date().toISOString() })
+      .eq('id', userId);
+    if (error) throw new Error(error.message);
+  },
+
+  // TODO: brancher API vérification NIF portugaise
+  async verifyNifAuto(_nif: string): Promise<{ valid: boolean; company_name?: string; error?: string }> {
+    return { valid: false, error: 'Verificação automática não configurada' };
   }
 };
 
 // Storage Service
 export const storageService = {
-  async uploadImage(file: File): Promise<string> {
-    // Generate a unique filename using timestamp
+  async uploadImage(file: File, bucket: string = 'product-images'): Promise<string> {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (isTestUser()) return 'https://placehold.co/400x400?text=TEST';
+    // END TODO
     const ext = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
 
-    // Supabase bucket is 'Images pizzas' as defined
-    const { error } = await supabase.storage.from('Images pizzas').upload(fileName, file, { cacheControl: '3600', upsert: false });
+    const { error } = await supabase.storage.from(bucket).upload(fileName, file, { cacheControl: '3600', upsert: false });
 
     if (error) {
       console.error('Storage error:', error);
       throw new Error(error.message);
     }
 
-    // Get public URL
-    const { data: publicData } = supabase.storage.from('Images pizzas').getPublicUrl(fileName);
+    const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(fileName);
     return publicData.publicUrl;
   }
 };

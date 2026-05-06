@@ -4,7 +4,7 @@ import type { User, UserRole } from '../../types';
 
 const ROLE_LABELS = {
   admin: 'Administrador',
-  pizzeria: 'Pizzaria',
+  boutique: 'Boutique',
   client: 'Cliente'
 };
 
@@ -14,7 +14,7 @@ export function Users() {
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
-    role: 'pizzeria' as UserRole,
+    role: 'boutique' as UserRole,
     full_name: '',
     phone: '',
     address: ''

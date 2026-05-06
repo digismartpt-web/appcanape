@@ -43,9 +43,9 @@ export const PromotionsManager: React.FC = () => {
         setIsEditing(true);
     };
 
-    if (loading) return <div className="p-8 text-center animate-pulse">Carregando dados da pizzaria...</div>;
+    if (loading) return <div className="p-8 text-center animate-pulse">Carregando dados...</div>;
 
-    const hasPermission = authUser?.role === 'admin' || authUser?.role === 'pizzeria';
+    const hasPermission = authUser?.role === 'admin' || authUser?.role === 'boutique';
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-6 border border-primary-100">

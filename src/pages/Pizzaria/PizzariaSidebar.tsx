@@ -5,27 +5,27 @@ import { cn } from '../../lib/utils';
 
 const menuItems = [
   {
-    path: '/pizzaria/commandes',
+    path: '/boutique/commandes',
     label: 'Encomendas',
     icon: ShoppingBag,
   },
   {
-    path: '/pizzaria/menu',
+    path: '/boutique/menu',
     label: 'Menu',
     icon: Pizza,
   },
   {
-    path: '/pizzaria/categorias',
+    path: '/boutique/categorias',
     label: 'Categorias',
     icon: Tag,
   },
   {
-    path: '/pizzaria/promocoes',
+    path: '/boutique/promocoes',
     label: 'Promoções',
     icon: Gift,
   },
   {
-    path: '/pizzaria/configuracoes',
+    path: '/boutique/configuracoes',
     label: 'Configurações',
     icon: Settings,
   }

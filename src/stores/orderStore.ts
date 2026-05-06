@@ -24,6 +24,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   error: null,
 
   fetchUserOrders: async (userId: string) => {
+    // TODO: REMOVE BEFORE PRODUCTION
+    if (!userId || userId.startsWith('test-')) {
+      set({ orders: [], loading: false, error: null });
+      return;
+    }
+    // END TODO
     set({ loading: true });
     try {
       const orders = await ordersService.getUserOrders(userId);
@@ -81,6 +87,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   initAdminOrdersListener: () => {
+    // TODO: REMOVE BEFORE PRODUCTION — mock for test accounts
+    if (sessionStorage.getItem('dev_test_user')) {
+      set({ orders: [], loading: false, initialized: true, error: null });
+      return () => {};
+    }
+    // END TODO
+
     set({ initialized: true });
     if (!get().initialized) set({ loading: true });
 
@@ -110,6 +123,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   subscribeToUserOrders: (userId: string) => {
+    // TODO: REMOVE BEFORE PRODUCTION — mock for test accounts
+    if (!userId || userId.startsWith('test-') || sessionStorage.getItem('dev_test_user')) {
+      set({ orders: [], loading: false, error: null });
+      return () => {};
+    }
+    // END TODO
     return ordersService.subscribeToUserOrders(userId, (orders) => {
       set({ orders, loading: false, error: null });
     });

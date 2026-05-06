@@ -7,9 +7,9 @@ class AudioNotificationService {
 
   constructor() {
     // Carregar as preferências do localStorage
-    const savedEnabled = localStorage.getItem('pizzaria_audio_enabled');
-    const savedVolume = localStorage.getItem('pizzaria_audio_volume');
-    const savedSoundUrl = localStorage.getItem('pizzaria_notification_sound_url');
+    const savedEnabled = localStorage.getItem('boutique_audio_enabled');
+    const savedVolume = localStorage.getItem('boutique_audio_volume');
+    const savedSoundUrl = localStorage.getItem('boutique_notification_sound_url');
 
     if (savedEnabled !== null) {
       this.isEnabled = savedEnabled === 'true';
@@ -144,7 +144,7 @@ class AudioNotificationService {
 
   setEnabled(enabled: boolean) {
     this.isEnabled = enabled;
-    localStorage.setItem('pizzaria_audio_enabled', enabled.toString());
+    localStorage.setItem('boutique_audio_enabled', enabled.toString());
   }
 
   getEnabled(): boolean {
@@ -153,7 +153,7 @@ class AudioNotificationService {
 
   setVolume(volume: number) {
     this.volume = Math.max(0, Math.min(1, volume));
-    localStorage.setItem('pizzaria_audio_volume', this.volume.toString());
+    localStorage.setItem('boutique_audio_volume', this.volume.toString());
   }
 
   getVolume(): number {
@@ -167,9 +167,9 @@ class AudioNotificationService {
   setCustomSoundUrl(url: string | null) {
     this.customSoundUrl = url;
     if (url) {
-      localStorage.setItem('pizzaria_notification_sound_url', url);
+      localStorage.setItem('boutique_notification_sound_url', url);
     } else {
-      localStorage.removeItem('pizzaria_notification_sound_url');
+      localStorage.removeItem('boutique_notification_sound_url');
     }
   }
 

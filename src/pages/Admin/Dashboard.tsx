@@ -13,7 +13,7 @@ export function Dashboard() {
   const [stats, setStats] = useState({
     total_orders: 0,
     total_gross_revenue: 0,
-    total_pizzeria_share: 0,
+    total_boutique_share: 0,
     total_commission: 0,
     average_order_value: 0,
     orders_by_status: {} as Record<string, number>
@@ -80,7 +80,7 @@ export function Dashboard() {
     const total_orders = validOrders.length;
     const total_gross_revenue = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const total_commission = total_gross_revenue * 0.10;
-    const total_pizzeria_share = total_gross_revenue - total_commission;
+    const total_boutique_share = total_gross_revenue - total_commission;
     const average_order_value = total_orders > 0 ? total_gross_revenue / total_orders : 0;
 
     // Estatísticas por Semana
@@ -107,7 +107,7 @@ export function Dashboard() {
     setStats({
       total_orders,
       total_gross_revenue,
-      total_pizzeria_share,
+      total_boutique_share,
       total_commission,
       average_order_value,
       orders_by_status
@@ -195,7 +195,7 @@ export function Dashboard() {
   };
 
   const handleHideOrder = async (orderId: string) => {
-    if (window.confirm('Tem a certeza de que pretende remover esta linha do seu registo de facturação? Esta ação não afectará a visualização da pizzaria.')) {
+    if (window.confirm('Tem a certeza de que pretende remover esta linha do seu registo de facturação? Esta ação não afectará a visualização da boutique.')) {
       try {
         await ordersService.hideOrderForAdmin(orderId);
         toast.success('Registo removido do seu painel');
@@ -258,7 +258,7 @@ export function Dashboard() {
         />
         <StatCard
           title="Parte da Pizzaria (90%)"
-          value={`${stats.total_pizzeria_share.toFixed(2)}€`}
+          value={`${stats.total_boutique_share.toFixed(2)}€`}
           icon={<ShoppingBag className="h-6 w-6" />}
           color="bg-blue-600"
           subtitle="Receitas líquidas estimadas p/ Pizzaria"
@@ -309,7 +309,7 @@ export function Dashboard() {
         <div className="p-6 border-b flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold text-primary-800">Registo Histórico de Encomendas (Justificativos)</h2>
-            <p className="text-sm text-primary-600 mt-1">Exibindo todas as encomendas, incluindo as ocultadas pela pizzaria.</p>
+            <p className="text-sm text-primary-600 mt-1">Exibindo todas as encomendas, incluindo as ocultadas pela boutique.</p>
           </div>
           <button
             onClick={() => exportToCSV(false)}
@@ -378,7 +378,7 @@ export function Dashboard() {
           <div className="flex-1">
             <label className="block text-sm font-medium text-primary-700 mb-2">Senha para Eliminar Todas as Encomendas</label>
             <input type="text" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500" placeholder="Ex: 1234" required />
-            <p className="text-xs text-primary-500 mt-1">Esta senha será necessária para eliminar todas as encomendas no painel de gestão da pizzaria.</p>
+            <p className="text-xs text-primary-500 mt-1">Esta senha será necessária para eliminar todas as encomendas no painel de gestão da boutique.</p>
           </div>
           <button type="submit" disabled={isSaving} className="flex items-center space-x-2 bg-accent-500 text-white px-6 py-2 rounded-md hover:bg-accent-600 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
             <Save className="h-5 w-5" />

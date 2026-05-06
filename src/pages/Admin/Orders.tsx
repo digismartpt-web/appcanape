@@ -140,7 +140,7 @@ export function Orders() {
                             }
                           }}
                           className="text-red-500 hover:text-red-700 p-1.5 rounded-full hover:bg-red-50 transition-colors"
-                          title="Remover do painel admin (não afeta a pizzaria)"
+                          title="Remover do painel admin (não afeta a boutique)"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

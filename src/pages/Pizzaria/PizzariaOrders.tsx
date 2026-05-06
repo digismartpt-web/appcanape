@@ -795,7 +795,7 @@ export function PizzariaOrders() {
                           <Clock className="h-5 w-5 mr-2 text-blue-700" />
                           <div>
                             <p className="text-sm font-medium text-blue-900">
-                              Hora de entrega proposta pela pizzaria: {selectedOrder.estimated_delivery_time}
+                              Hora de entrega proposta pela boutique: {selectedOrder.estimated_delivery_time}
                             </p>
                             {selectedOrder.estimated_delivery_time_confirmed ? (
                               <p className="text-xs text-green-700 mt-1">

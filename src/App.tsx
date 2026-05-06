@@ -23,12 +23,13 @@ import { Profile } from './pages/Profile';
 import MesCommandes from './pages/MesCommandes';
 import { Privacy } from './pages/Privacy';
 import { Admin } from './pages/Admin';
-import { Pizzaria } from './pages/Pizzaria';
+import { Boutique } from './pages/Boutique';
 import { PaymentSuccess } from './pages/PaymentSuccess';
+import { PedidoPro } from './pages/PedidoPro';
 
 function MainContent() {
   const location = useLocation();
-  const isAdminOrPizzaria = location.pathname.startsWith('/admin') || location.pathname.startsWith('/pizzaria');
+  const isAdminOrPizzaria = location.pathname.startsWith('/admin') || location.pathname.startsWith('/boutique');
 
   return (
     <main className={`flex-1 ${isAdminOrPizzaria ? 'w-full' : 'container mx-auto px-4 py-8'}`}>
@@ -53,11 +54,12 @@ function MainContent() {
             <Admin />
           </ProtectedRoute>
         } />
-        <Route path="/pizzaria/*" element={
-          <ProtectedRoute role="pizzeria">
-            <Pizzaria />
+        <Route path="/boutique/*" element={
+          <ProtectedRoute role="boutique">
+            <Boutique />
           </ProtectedRoute>
         } />
+        <Route path="/acesso-profissional" element={<PedidoPro />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
       </Routes>
     </main>
@@ -73,24 +75,23 @@ import { useOrderStore } from './stores/orderStore';
 import { supabase } from './lib/supabase';
 import { audioNotificationService } from './services/audioNotificationService';
 
-async function showPizzeriaPushNotification(logoUrl?: string) {
+async function showBoutiquePushNotification(logoUrl?: string) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
     const icon = logoUrl || '/imagem.png';
     if ('serviceWorker' in navigator) {
       const controller = navigator.serviceWorker.controller;
       if (controller) {
-        // Route through SW message handler so notification fires even on locked screen
         controller.postMessage({
           type: 'SHOW_NOTIFICATION',
-          title: 'Nova Encomenda!',
-          body: 'Uma nova encomenda foi recebida.',
+          title: 'Nova encomenda!',
+          body: 'Foi recebida uma nova encomenda.',
           icon
         });
       } else {
         const reg = await navigator.serviceWorker.ready;
-        await reg.showNotification('Nova Encomenda!', {
-          body: 'Uma nova encomenda foi recebida.',
+        await reg.showNotification('Nova encomenda!', {
+          body: 'Foi recebida uma nova encomenda.',
           icon,
           badge: '/imagem.png',
           vibrate: [300, 100, 300],
@@ -99,10 +100,10 @@ async function showPizzeriaPushNotification(logoUrl?: string) {
         } as NotificationOptions);
       }
     } else {
-      new Notification('Nova Encomenda!', { body: 'Uma nova encomenda foi recebida.', icon });
+      new Notification('Nova encomenda!', { body: 'Foi recebida uma nova encomenda.', icon });
     }
   } catch (error) {
-    console.warn('⚠️ Erro ao mostrar notificação push:', error);
+    console.warn('⚠️ Erro notificação push:', error);
   }
 }
 
@@ -115,11 +116,14 @@ function App() {
   const { initPromotionsStore } = usePromotionsStore();
   const { initAdminOrdersListener } = useOrderStore();
 
-  // Subscription INSERT active sur toutes les pages pour l'utilisateur pizzeria
+  // Subscription INSERT active sur toutes les pages pour l'utilisateur boutique
   useEffect(() => {
-    if (user?.role !== 'pizzeria') return;
+    if (user?.role !== 'boutique') return;
+    // TODO: REMOVE BEFORE PRODUCTION — skip realtime for test accounts
+    if (sessionStorage.getItem('dev_test_user')) return;
+    // END TODO
 
-    const channelId = `pizzeria_notifications_${Date.now()}`;
+    const channelId = `boutique_notifications_${Date.now()}`;
     const channel = supabase
       .channel(channelId)
       .on(
@@ -130,7 +134,7 @@ function App() {
           if (newOrder?.status === 'em_espera') {
             audioNotificationService.playNotification();
             if ('vibrate' in navigator) navigator.vibrate([300, 100, 300]);
-            showPizzeriaPushNotification(settings?.logo_url);
+            showBoutiquePushNotification(settings?.logo_url);
           }
         }
       )
@@ -146,9 +150,9 @@ function App() {
     const unsubPizzas = initPizzasStore();
     const unsubPromosGlobal = initPromotionsStore();
     
-    // Only subscribe to all orders if user is admin or pizzaria
+    // Only subscribe to all orders if user is admin or boutique
     let unsubOrders = () => {};
-    if (user?.role === 'admin' || user?.role === 'pizzeria') {
+    if (user?.role === 'admin' || user?.role === 'boutique') {
       unsubOrders = initAdminOrdersListener(); // Auto re-init on role change via cleanup logic
     }
     

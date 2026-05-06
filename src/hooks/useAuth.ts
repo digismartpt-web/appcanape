@@ -1,6 +1,34 @@
 import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseAuth } from '../lib/supabase';
 import type { User, UserRole } from '../types';
+
+// TODO: REMOVE BEFORE PRODUCTION — hardcoded test accounts
+const TEST_USERS: Record<string, User> = {
+  'admin@boutique.test': {
+    id: 'test-admin-id',
+    email: 'admin@boutique.test',
+    full_name: 'Admin Teste',
+    phone: '912345678',
+    address: 'Rua de Teste, 1, Lisboa',
+    role: 'boutique' as UserRole,
+    created_at: new Date().toISOString()
+  },
+  'client@boutique.test': {
+    id: 'test-client-id',
+    email: 'client@boutique.test',
+    full_name: 'Cliente Teste',
+    phone: '961234567',
+    address: 'Avenida de Teste, 2, Porto',
+    role: 'client' as UserRole,
+    created_at: new Date().toISOString()
+  }
+};
+const TEST_PASSWORDS: Record<string, string> = {
+  'admin@boutique.test': 'Admin1234!',
+  'client@boutique.test': 'Client1234!'
+};
+const TEST_USER_KEY = 'dev_test_user';
+// END TODO
 
 interface ProfileUpdateData {
   full_name: string;
@@ -24,14 +52,31 @@ export const useAuth = create<AuthState>((set, get) => ({
   loading: true,
 
   initializeAuth: () => {
+    // TODO: REMOVE BEFORE PRODUCTION — restore test user from sessionStorage
+    const savedTestUser = sessionStorage.getItem(TEST_USER_KEY);
+    if (savedTestUser) {
+      try {
+        const testUser = JSON.parse(savedTestUser) as User;
+        set({ user: testUser, loading: false });
+        const { data: { subscription } } = supabaseAuth.auth.onAuthStateChange(() => {});
+        return () => { subscription.unsubscribe(); };
+      } catch {
+        sessionStorage.removeItem(TEST_USER_KEY);
+      }
+    }
+    // END TODO
+
     // 1. Primeiro tentamos recuperar a sessão existente
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabaseAuth.auth.getSession().then(({ data: { session } }) => {
+      // TODO: REMOVE BEFORE PRODUCTION
+      if (sessionStorage.getItem(TEST_USER_KEY)) return;
+      // END TODO
       if (session?.user) {
         get()._loadUserProfile(session.user.id, session.user.email);
       } else {
         // Tentativa de sessão anónima se não houver sessão ativa
         console.log('👤 [Auth] Nenhum utilizador encontrado, a iniciar sessão anónima...');
-        supabase.auth.signInAnonymously().catch(error => {
+        supabaseAuth.auth.signInAnonymously().catch(error => {
           console.error('❌ [Auth] Falha na ligação anónima:', error);
           set({ user: null, loading: false });
         });
@@ -39,9 +84,12 @@ export const useAuth = create<AuthState>((set, get) => ({
     });
 
     // 2. Depois subscrevemos as mudanças de estado
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabaseAuth.auth.onAuthStateChange(async (event, session) => {
+      // TODO: REMOVE BEFORE PRODUCTION
+      if (sessionStorage.getItem(TEST_USER_KEY)) return;
+      // END TODO
       console.log('Auth state changed:', event, session?.user?.id || 'null');
-      
+
       if (session?.user) {
         get()._loadUserProfile(session.user.id, session.user.email);
       } else {
@@ -55,13 +103,20 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // TODO: REMOVE BEFORE PRODUCTION — test account bypass
+    if (TEST_USERS[email] && TEST_PASSWORDS[email] === password) {
+      sessionStorage.setItem(TEST_USER_KEY, JSON.stringify(TEST_USERS[email]));
+      set({ user: TEST_USERS[email], loading: false });
+      return;
+    }
+    // END TODO
+    const { error } = await supabaseAuth.auth.signInWithPassword({ email, password });
     if (error) throw new Error(error.message || 'Email ou palavra-passes incorretos');
   },
 
   signUp: async (email, password, userData) => {
     // 1. Criar a conta Auth
-    const { error: authError } = await supabase.auth.signUp({
+    const { error: authError } = await supabaseAuth.auth.signUp({
       email,
       password,
       options: {
@@ -87,7 +142,16 @@ export const useAuth = create<AuthState>((set, get) => ({
       const cartStore = await import('../stores/cartStore');
       cartStore.useCartStore.getState().clearCart();
 
-      const { error } = await supabase.auth.signOut();
+      // TODO: REMOVE BEFORE PRODUCTION — test account bypass
+      if (sessionStorage.getItem(TEST_USER_KEY)) {
+        sessionStorage.removeItem(TEST_USER_KEY);
+        set({ user: null, loading: false });
+        console.log('Sessão de teste terminada');
+        return;
+      }
+      // END TODO
+
+      const { error } = await supabaseAuth.auth.signOut();
       if (error) throw error;
       set({ user: null, loading: false });
       console.log('Sessão terminada com sucesso');
@@ -98,7 +162,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 
   updateProfile: async (data: ProfileUpdateData) => {
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData } = await supabaseAuth.auth.getSession();
     const currentUser = sessionData.session?.user;
     
     if (!currentUser) throw new Error('Utilizador não ligado');

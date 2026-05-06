@@ -63,7 +63,7 @@ export function PizzariaSettings() {
 
     try {
       if (!settings.name.trim()) {
-        throw new Error('O nome da pizzaria é obrigatório');
+        throw new Error('O nome da boutique é obrigatório');
       }
 
       if (settings.email.trim() && !isValidEmail(settings.email)) {
@@ -221,7 +221,7 @@ export function PizzariaSettings() {
               <div className="flex justify-center">
                 <img
                   src={settings.logo_url}
-                  alt="Logo da pizzaria"
+                  alt="Logo da boutique"
                   className="h-24 w-24 object-contain rounded-lg border"
                   onError={(e) => {
                     console.error('Erro ao carregar logo');
@@ -260,19 +260,19 @@ export function PizzariaSettings() {
           </h2>
 
           <div>
-            <label htmlFor="pizzaria-name" className="block text-sm font-medium text-primary-700 mb-1">
+            <label htmlFor="boutique-name" className="block text-sm font-medium text-primary-700 mb-1">
               Nome *
             </label>
             <input
               type="text"
-              id="pizzaria-name"
-              name="pizzaria-name"
+              id="boutique-name"
+              name="boutique-name"
               value={settings.name || ''}
               onChange={(e) => updateField('name', e.target.value)}
               className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
               required
-              title="Nome da pizzaria"
-              placeholder="Introduza o nome da pizzaria"
+              title="Nome da boutique"
+              placeholder="Introduza o nome da boutique"
             />
           </div>
         </div>

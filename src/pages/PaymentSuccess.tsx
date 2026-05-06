@@ -65,7 +65,7 @@ export const PaymentSuccess: React.FC = () => {
           Pagamento Concluído!
         </h1>
         <p className="text-lg text-gray-600 mb-10">
-          Obrigado pela sua encomenda. A pizzaria foi notificada e vai começar a preparar o seu pedido em brevê.
+          Obrigado pela sua encomenda. A boutique foi notificada e vai começar a preparar o seu pedido em breve.
         </p>
 
         <div className="space-y-4">

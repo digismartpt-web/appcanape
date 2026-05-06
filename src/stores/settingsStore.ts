@@ -26,6 +26,7 @@ const defaultSettings: PizzariaSettings = {
   default_preparation_time: 10,
   default_delivery_time: 30,
   cutoff_minutes_before_closing: 30,
+  estimated_delivery_days: 14,
   notification_sound_url: '',
   banner_active: false,
   banner_image_url: '',
@@ -45,7 +46,7 @@ const defaultSettings: PizzariaSettings = {
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: (() => {
     try {
-      const cached = localStorage.getItem('pizzaria_settings_cache');
+      const cached = localStorage.getItem('boutique_settings_cache');
       return cached ? JSON.parse(cached) : defaultSettings;
     } catch (e) {
       return defaultSettings;
@@ -63,7 +64,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         const merged = { ...defaultSettings, ...data };
         set({ settings: merged, initialized: true });
         try {
-          localStorage.setItem('pizzaria_settings_cache', JSON.stringify(merged));
+          localStorage.setItem('boutique_settings_cache', JSON.stringify(merged));
         } catch (e) {
           // Navigation privée bloque parfois l'écriture
         }
@@ -71,7 +72,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     } catch (error) {
       console.warn('⚠️ [SettingsStore] Fallback to cache or defaults:', error);
       try {
-        const cache = localStorage.getItem('pizzaria_settings_cache');
+        const cache = localStorage.getItem('boutique_settings_cache');
         if (cache) {
           set({ settings: JSON.parse(cache), initialized: true });
         }
@@ -101,7 +102,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           const merged = { ...get().settings, ...data };
           set({ settings: merged });
           try {
-            localStorage.setItem('pizzaria_settings_cache', JSON.stringify(merged));
+            localStorage.setItem('boutique_settings_cache', JSON.stringify(merged));
           } catch (e) {}
           window.dispatchEvent(new Event('settings_updated'));
         }
@@ -118,13 +119,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   updateSettings: async (newSettings) => {
+    if (!newSettings) return false;
     try {
       const currentSettings = get().settings;
       const updatedSettings = { ...currentSettings, ...newSettings };
-      
+
       // Update local state immediately (Optimistic)
       set({ settings: updatedSettings });
-      localStorage.setItem('pizzaria_settings_cache', JSON.stringify(updatedSettings));
+      localStorage.setItem('boutique_settings_cache', JSON.stringify(updatedSettings));
+
+      // TODO: REMOVE BEFORE PRODUCTION — skip Supabase write for test accounts
+      if (sessionStorage.getItem('dev_test_user')) return true;
+      // END TODO
 
       const { error } = await supabase
         .from('settings')
@@ -133,6 +139,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
       if (error) {
         console.error('❌ [SettingsStore] Erro ao atualizar Supabase:', error.message, error.details);
+        console.trace('Stack trace de updateSettings');
         toast.error(`Erro ao guardar: ${error.message}`);
         throw error;
       }

@@ -1,19 +1,19 @@
 import { create } from 'zustand';
-import { pizzasService, categoriesService, extrasService } from '../services/supabaseService';
-import type { Pizza, Category, Extra } from '../types';
+import { productsService, categoriesService, extrasService } from '../services/supabaseService';
+import type { Product, Category, Extra } from '../types';
 
-interface PizzasState {
-  pizzas: Pizza[];      // Pizzas ativas para o público
-  allPizzas: Pizza[];   // Todas as pizzas para administração
+interface ProductsState {
+  pizzas: Product[];
+  allPizzas: Product[];
   categories: Category[];
-  extras: Extra[];      // Extras ativos para o público
-  allExtras: Extra[];   // Todos os extras para administração
+  extras: Extra[];
+  allExtras: Extra[];
   loading: boolean;
   initialized: boolean;
   initPizzasStore: () => () => void;
 }
 
-export const usePizzasStore = create<PizzasState>((set, get) => ({
+export const usePizzasStore = create<ProductsState>((set, get) => ({
   pizzas: [],
   allPizzas: [],
   categories: [],
@@ -26,14 +26,12 @@ export const usePizzasStore = create<PizzasState>((set, get) => ({
     if (get().initialized) return () => {};
     set({ initialized: true });
 
-    console.log('🔄 [PizzasStore] Inicializando ouvintes globais do catálogo...');
-
-    const unsubActivePizzas = pizzasService.subscribeToActivePizzas((pizzas) => {
-      set({ pizzas, loading: false });
+    const unsubActiveProducts = productsService.subscribeToActiveProducts((products) => {
+      set({ pizzas: products, loading: false });
     });
 
-    const unsubAllPizzas = pizzasService.subscribeToAllPizzas((allPizzas) => {
-      set({ allPizzas });
+    const unsubAllProducts = productsService.subscribeToAllProducts((allProducts) => {
+      set({ allPizzas: allProducts });
     });
 
     const unsubCategories = categoriesService.subscribeToCategories((categories) => {
@@ -49,13 +47,15 @@ export const usePizzasStore = create<PizzasState>((set, get) => ({
     });
 
     return () => {
-      console.log('🔌 [PizzasStore] Desconectando ouvintes globais do catálogo...');
-      unsubActivePizzas();
-      unsubAllPizzas();
+      unsubActiveProducts();
+      unsubAllProducts();
       unsubCategories();
       unsubActiveExtras();
       unsubAllExtras();
-      set({ initialized: false }); // Reset so it can be re-initialized if needed
+      set({ initialized: false });
     };
   }
 }));
+
+// Alias pour rétrocompatibilité
+export const useProductsStore = usePizzasStore;

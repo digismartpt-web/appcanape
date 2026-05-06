@@ -1,7 +1,14 @@
-// Types de base pour l'application
-export type UserRole = 'admin' | 'pizzeria' | 'client';
+export type UserRole = 'admin' | 'boutique' | 'client' | 'pro';
 
-export type OrderStatus = 'pendente_pagamento' | 'en_attente' | 'em_espera' | 'confirmee' | 'en_preparation' | 'prete' | 'em_entrega' | 'recuperee' | 'cancelled';
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'preparing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled';
+
+export type ProRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export interface User {
   id: string;
@@ -11,6 +18,31 @@ export interface User {
   phone: string;
   address: string;
   created_at: string;
+  updated_at?: string;
+  pro_validated?: boolean;
+  pro_discount_percent?: number;
+  pro_validated_at?: string;
+  pro_validated_by?: string;
+}
+
+export interface ProRequest {
+  id: string;
+  user_id: string;
+  company_name: string;
+  nif: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  activity_sector?: string;
+  message?: string;
+  status: ProRequestStatus;
+  rejection_reason?: string;
+  auto_verification_attempted: boolean;
+  auto_verification_result?: Record<string, any>;
+  auto_verification_at?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  created_at?: string;
   updated_at?: string;
 }
 
@@ -23,28 +55,48 @@ export interface Category {
   updated_at?: string;
 }
 
-export interface Pizza {
+export interface ProductSize {
+  code: string;
+  label: string;
+  price: number;
+}
+
+export interface Product {
   id: string;
   name: string;
-  description: string;
-  image_url: string;
-  prices: {
-    small: number;
-    medium: number;
-    large: number;
-  };
-  has_unique_price?: boolean;
-  unique_price?: number;
-  ingredients: string[];
-  category: string;
-  vegetarian?: boolean;
-  active?: boolean;
-  customizable?: boolean;
-  max_custom_ingredients?: number;
-  custom_ingredients?: string[];
+  description?: string;
+  features: string[];
+  has_options: boolean;
+  options: string[];
+  category_id?: string;
+  image_url?: string;
+  images?: ProductImage[];
+  available: boolean;
+  sizes: ProductSize[];
+  sizes_pro?: ProductSize[];
+  pro_discount_percent?: number;
+  pro_price_override?: boolean;
+  stock: number;
+  stock_alert_threshold: number;
+  track_stock: boolean;
+  width_cm?: number;
+  depth_cm?: number;
+  height_cm?: number;
+  weight_kg?: number;
   created_at?: string;
   updated_at?: string;
 }
+
+export interface ProductImage {
+  id: string;
+  product_id: string;
+  image_url: string;
+  position: number;
+  created_at?: string;
+}
+
+// Alias rétrocompatibilité
+export type Pizza = Product;
 
 export interface Extra {
   id: string;
@@ -55,16 +107,27 @@ export interface Extra {
   updated_at?: string;
 }
 
-export interface OrderItem {
-  pizza_id: string;
-  pizza_name: string;
-  pizza_category?: string;
-  size: 'small' | 'medium' | 'large';
+export interface CartItem {
+  id: string;
+  product: Product;
+  sizeCode: string;
+  sizeLabel: string;
+  selectedOption?: string;
   quantity: number;
   price: number;
-  removed_ingredients?: string[];
-  extras?: Extra[];
-  custom_ingredients?: string[];
+  discount?: number;
+  isFree?: boolean;
+}
+
+export interface OrderItem {
+  product_id: string;
+  product_name: string;
+  product_category?: string;
+  size: string;
+  size_label?: string;
+  selected_option?: string;
+  quantity: number;
+  price: number;
 }
 
 export type DeliveryType = 'delivery' | 'pickup';
@@ -88,31 +151,19 @@ export interface Order {
   total: number;
   delivery_fee?: number;
   status: OrderStatus;
+  payment_status?: string;
   cancellation_reason?: string;
   preparation_time?: number;
-  delivery_time?: number;
-  estimated_delivery_time?: string;
-  estimated_delivery_time_confirmed?: boolean;
-  requested_later_time?: string;
   delivery_distance?: number;
-  estimated_time?: number;
   commission_total?: number;
-  pizzeria_hidden?: boolean;
+  boutique_hidden?: boolean;
   admin_hidden?: boolean;
+  estimated_delivery_days?: number;
+  estimated_delivery_date?: string;
+  shipped_at?: string;
+  delivered_at?: string;
   created_at: string;
   updated_at?: string;
-}
-
-export interface CartItem {
-  id: string;
-  pizza: Pizza;
-  size: 'small' | 'medium' | 'large';
-  quantity: number;
-  removedIngredients: string[];
-  extras: Extra[];
-  customIngredients: string[];
-  discount?: number;
-  isFree?: boolean;
 }
 
 export interface PromotionRule {
@@ -125,13 +176,13 @@ export interface PromotionRule {
     count: number;
     category?: string;
     productIds?: string[];
-    size?: 'small' | 'medium' | 'large';
+    size?: string;
   };
   reward: {
     count: number;
     productId?: string;
     category?: string;
-    size?: 'small' | 'medium' | 'large';
+    size?: string;
     discountType: 'free' | 'percentage' | 'fixed';
     discountValue: number;
   };

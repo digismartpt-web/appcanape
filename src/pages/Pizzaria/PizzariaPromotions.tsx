@@ -145,7 +145,7 @@ export function PizzariaPromotions() {
                     <Gift className="h-8 w-8 text-accent-500" />
                     <div>
                         <h1 className="text-3xl font-bold text-primary-800">Promoções e Marketing</h1>
-                        <p className="text-primary-600">Gira as ofertas, descontos e o banner promocional da sua pizzaria</p>
+                        <p className="text-primary-600">Gira as ofertas, descontos e o banner promocional da sua boutique</p>
                     </div>
                 </div>
             </div>
