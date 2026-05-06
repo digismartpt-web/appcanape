@@ -1,11 +1,10 @@
 import { supabase, supabaseAuth } from '../lib/supabase';
-import type { Product, ProductImage, ProductSize, Order, User, OrderStatus, Extra, PromotionRule, ProRequest, ProRequestStatus } from '../types';
+import type { Product, ProductImage, ProductSize, Order, User, OrderStatus, PromotionRule, ProRequest, ProRequestStatus } from '../types';
 
 export const COLLECTIONS = {
   USERS: 'users_profiles',
   PRODUCTS: 'products',
   ORDERS: 'orders',
-  EXTRAS: 'extras',
   PROMOTIONS: 'promotions',
   BANNER_GALLERY: 'banner_gallery',
   CATEGORIES: 'categories',
@@ -554,67 +553,6 @@ export const ordersService = {
     // END TODO
     const { error } = await supabase.from(COLLECTIONS.ORDERS).update({ boutique_hidden: true }).not('id', 'is', null);
     if (error) throw new Error(error.message);
-  }
-};
-
-// Extras Service
-export const extrasService = {
-  async createExtra(extraData: Omit<Extra, 'id'>) {
-    // TODO: REMOVE BEFORE PRODUCTION
-    if (isTestUser()) return crypto.randomUUID();
-    // END TODO
-    const { data, error } = await supabase.from(COLLECTIONS.EXTRAS).insert({ ...extraData, active: true }).select('id').single();
-    if (error) throw new Error(error.message);
-    if (!data) throw new Error('Extra criado mas sem resposta do servidor — verifique as permissões RLS');
-    return data.id;
-  },
-
-  async updateExtra(extraId: string, extraData: Partial<Extra>) {
-    // TODO: REMOVE BEFORE PRODUCTION
-    if (isTestUser()) return;
-    // END TODO
-    const { error } = await supabase.from(COLLECTIONS.EXTRAS).update({ ...extraData, updated_at: new Date().toISOString() }).eq('id', extraId);
-    if (error) throw new Error(error.message);
-  },
-
-  async deleteExtra(extraId: string) {
-    // TODO: REMOVE BEFORE PRODUCTION
-    if (isTestUser()) return;
-    // END TODO
-    const { error } = await supabase.from(COLLECTIONS.EXTRAS).delete().eq('id', extraId);
-    if (error) throw new Error(error.message);
-  },
-
-  async getAllExtras(): Promise<Extra[]> {
-    const { data, error } = await supabase.from(COLLECTIONS.EXTRAS).select('*').order('name', { ascending: true });
-    if (error) throw new Error(error.message);
-    return (data || []).filter(e => e.active !== false) as Extra[];
-  },
-
-  async getAllExtrasForAdmin(): Promise<Extra[]> {
-    const { data, error } = await supabase.from(COLLECTIONS.EXTRAS).select('*').order('name', { ascending: true });
-    if (error) throw new Error(error.message);
-    return data as Extra[];
-  },
-
-  subscribeToActiveExtras(callback: (extras: Extra[]) => void) {
-    this.getAllExtras().then(callback);
-    const channelId = `extras_active_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.EXTRAS }, () => {
-        this.getAllExtras().then(callback);
-      }).subscribe();
-    return () => { supabase.removeChannel(channel); };
-  },
-
-  subscribeToAllExtras(callback: (extras: Extra[]) => void) {
-    this.getAllExtrasForAdmin().then(callback);
-    const channelId = `extras_all_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const channel = supabase.channel(channelId)
-      .on('postgres_changes', { event: '*', schema: SCHEMA, table: COLLECTIONS.EXTRAS }, () => {
-        this.getAllExtrasForAdmin().then(callback);
-      }).subscribe();
-    return () => { supabase.removeChannel(channel); };
   }
 };
 

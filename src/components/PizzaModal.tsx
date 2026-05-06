@@ -5,22 +5,20 @@ import { useAuth } from '../hooks/useAuth';
 import { usePizzasStore } from '../stores/pizzasStore';
 import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
 import { Pizza } from '../types';
-import type { Extra } from '../types';
 
 interface PizzaModalProps {
   pizza: Pizza;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (pizza: Pizza, size: 'small' | 'medium' | 'large', removedIngredients: string[], extras: Extra[], customIngredients: string[], commission?: number) => void;
+  onAddToCart: (pizza: Pizza, size: 'small' | 'medium' | 'large', removedIngredients: string[], customIngredients: string[], commission?: number) => void;
 }
 
 export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalProps) {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [removedIngredients, setRemovedIngredients] = useState<string[]>([]);
-  const [selectedExtras, setSelectedExtras] = useState<Extra[]>([]);
   const [customIngredients, setCustomIngredients] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
-  const { extras: availableExtras } = usePizzasStore();
+  usePizzasStore();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { settings } = usePizzariaSettings();
@@ -44,13 +42,10 @@ export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalPr
       
       setSelectedSize(initialSize);
       setRemovedIngredients([]);
-      setSelectedExtras([]);
       setCustomIngredients([]);
       setQuantity(1);
     }
   }, [isOpen, pizza?.id]);
-
-  // Extras são agora fornecidos via PizzasStore global
 
   if (!isOpen) return null;
 
@@ -59,14 +54,6 @@ export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalPr
       prev.includes(ingredient)
         ? prev.filter(i => i !== ingredient)
         : [...prev, ingredient]
-    );
-  };
-
-  const toggleExtra = (extra: Extra) => {
-    setSelectedExtras(prev =>
-      prev.find(e => e.id === extra.id)
-        ? prev.filter(e => e.id !== extra.id)
-        : [...prev, extra]
     );
   };
 
@@ -79,8 +66,7 @@ export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalPr
       basePrice = pizza.prices[selectedSize] || 0;
     }
 
-    const extrasTotal = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
-    return (basePrice + extrasTotal) * quantity;
+    return basePrice * quantity;
   };
 
   const handleAddToCart = () => {
@@ -97,7 +83,7 @@ export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalPr
 
     // Ajouter chaque pizza individuellement pour permettre des personnalisations différentes
     for (let i = 0; i < quantity; i++) {
-      onAddToCart(pizza, selectedSize, removedIngredients, selectedExtras, customIngredients, commission);
+      onAddToCart(pizza, selectedSize, removedIngredients, customIngredients, commission);
     }
     // Réinitialiser la quantité après ajout
     setQuantity(1);
@@ -207,55 +193,6 @@ export function PizzaModal({ pizza, isOpen, onClose, onAddToCart }: PizzaModalPr
               ))}
             </div>
           </div>
-
-          {availableExtras.length > 0 && (
-            <div>
-              <h3 className="text-lg font-medium mb-2">Extras</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Personalize a sua pizza com ingredientes adicionais
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-3">
-                  {availableExtras.slice(0, Math.ceil(availableExtras.length / 2)).map((extra) => (
-                    <button
-                      key={extra.id}
-                      onClick={() => toggleExtra(extra)}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${selectedExtras.find(e => e.id === extra.id)
-                        ? 'bg-orange-50 border-2 border-orange-500'
-                        : 'bg-gray-50 hover:bg-gray-100 active:bg-gray-200'
-                        } touch-manipulation`}
-                    >
-                      <span className="flex items-center text-sm sm:text-base">
-                        {selectedExtras.find(e => e.id === extra.id) ? '−' : '+'} {extra.name}
-                      </span>
-                      <span className="font-medium text-sm sm:text-base">
-                        {selectedExtras.find(e => e.id === extra.id) ? '−' : '+'}{extra.price.toFixed(2)}€
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <div className="space-y-3">
-                  {availableExtras.slice(Math.ceil(availableExtras.length / 2)).map((extra) => (
-                    <button
-                      key={extra.id}
-                      onClick={() => toggleExtra(extra)}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${selectedExtras.find(e => e.id === extra.id)
-                        ? 'bg-orange-50 border-2 border-orange-500'
-                        : 'bg-gray-50 hover:bg-gray-100 active:bg-gray-200'
-                        } touch-manipulation`}
-                    >
-                      <span className="flex items-center text-sm sm:text-base">
-                        {selectedExtras.find(e => e.id === extra.id) ? '−' : '+'} {extra.name}
-                      </span>
-                      <span className="font-medium text-sm sm:text-base">
-                        {selectedExtras.find(e => e.id === extra.id) ? '−' : '+'}{extra.price.toFixed(2)}€
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
           {pizza.customizable && pizza.custom_ingredients && pizza.custom_ingredients.length > 0 && (
             <div className="border-t-2 border-green-200 pt-6">

@@ -110,7 +110,7 @@ async function showBoutiquePushNotification(logoUrl?: string) {
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { user } = useAuth();
-  const { initPromotionsListener, initExtrasListener } = useCartStore();
+  const { initPromotionsListener } = useCartStore();
   const { settings, initSettings } = useSettingsStore();
   const { initPizzasStore } = usePizzasStore();
   const { initPromotionsStore } = usePromotionsStore();
@@ -145,7 +145,6 @@ function App() {
 
   useEffect(() => {
     const unsubPromosLegacy = initPromotionsListener(); // Keep for cart logic synchronization if needed
-    const unsubExtras = initExtrasListener();
     const unsubSettings = initSettings();
     const unsubPizzas = initPizzasStore();
     const unsubPromosGlobal = initPromotionsStore();
@@ -158,13 +157,12 @@ function App() {
     
     return () => {
       unsubPromosLegacy();
-      unsubExtras();
       unsubSettings();
       unsubPizzas();
       unsubPromosGlobal();
       unsubOrders();
     };
-  }, [initPromotionsListener, initExtrasListener, initSettings, initPizzasStore, initPromotionsStore, initAdminOrdersListener, user?.role]);
+  }, [initPromotionsListener, initSettings, initPizzasStore, initPromotionsStore, initAdminOrdersListener, user?.role]);
 
   return (
     <BrowserRouter>

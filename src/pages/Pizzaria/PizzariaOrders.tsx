@@ -858,11 +858,6 @@ export function PizzariaOrders() {
                               🚫 Sem: {item.removed_ingredients.join(', ')}
                             </div>
                           )}
-                          {item.extras && item.extras.length > 0 && item.extras.some(extra => extra.name && extra.price) && (
-                            <div className="text-sm text-green-600 mt-1">
-                              ➕ Extras: {item.extras.map(extra => `${extra.name} (+${extra.price}€)`).join(', ')}
-                            </div>
-                          )}
                           {item.custom_ingredients && item.custom_ingredients.length > 0 && (
                             <div className="text-sm text-blue-600 mt-1 font-medium">
                               Ingredientes: {item.custom_ingredients.join(', ')}

@@ -98,15 +98,6 @@ export interface ProductImage {
 // Alias rétrocompatibilité
 export type Pizza = Product;
 
-export interface Extra {
-  id: string;
-  name: string;
-  price: number;
-  active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface CartItem {
   id: string;
   product: Product;

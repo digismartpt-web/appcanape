@@ -33,7 +33,6 @@ interface CartStore {
   getItemCount: () => number;
   fetchPromotions: () => Promise<void>;
   initPromotionsListener: () => () => void;
-  initExtrasListener: () => () => void;
   applyPromotions: () => void;
 }
 
@@ -61,9 +60,6 @@ export const useCartStore = create<CartStore>()(
           get().applyPromotions();
         });
       },
-
-      // Conservé pour compatibilité App.tsx — pas utilisé pour le mobilier
-      initExtrasListener: () => () => {},
 
       applyPromotions: () => {
         const { items, promotions } = get();

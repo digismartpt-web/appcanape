@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, CreditCard as Edit2, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
-import { pizzasService, extrasService } from '../../services/supabaseService';
+import { Plus, CreditCard as Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
+import { pizzasService } from '../../services/supabaseService';
 import { usePizzasStore } from '../../stores/pizzasStore';
 import { usePizzariaCategories } from '../../hooks/usePizzariaCategories';
-import type { Pizza, Extra } from '../../types';
+import type { Pizza } from '../../types';
 
 interface PizzaFormData {
   name: string;
@@ -23,12 +23,6 @@ interface PizzaFormData {
   customizable: boolean;
   max_custom_ingredients: number;
   custom_ingredients: string[];
-}
-
-interface ExtraFormData {
-  name: string;
-  price: number;
-  active: boolean;
 }
 
 const initialFormData: PizzaFormData = {
@@ -52,7 +46,7 @@ const initialFormData: PizzaFormData = {
 };
 
 export function PizzariaMenu() {
-  const { allPizzas: pizzas, allExtras: extras, loading } = usePizzasStore();
+  const { allPizzas: pizzas, loading } = usePizzasStore();
   const { activeCategories } = usePizzariaCategories();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -61,10 +55,6 @@ export function PizzariaMenu() {
   const [editingPizza, setEditingPizza] = useState<Pizza | null>(null);
   const [formData, setFormData] = useState<PizzaFormData>(initialFormData);
   const [isSaving, setIsSaving] = useState(false);
-  const [showExtrasModal, setShowExtrasModal] = useState(false);
-  const [showExtraFormModal, setShowExtraFormModal] = useState(false);
-  const [editingExtra, setEditingExtra] = useState<Extra | null>(null);
-  const [extraFormData, setExtraFormData] = useState<ExtraFormData>({ name: '', price: 0, active: true });
 
   // Helper functions for 10% markup (apply to pizzas only)
   const applyMarkup = (price: number) => Math.round(price * 1.1 * 100) / 100;
@@ -202,65 +192,6 @@ export function PizzariaMenu() {
     }
   };
 
-  const handleExtraSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-
-    const markedUpExtraData = {
-      ...extraFormData,
-      price: applyMarkup(extraFormData.price)
-    };
-
-    try {
-      if (editingExtra) {
-        await extrasService.updateExtra(editingExtra.id, markedUpExtraData);
-      } else {
-        await extrasService.createExtra(markedUpExtraData);
-      }
-      // Não é necessário recarregar, a subscrição em tempo real tratará disso
-      setShowExtraFormModal(false);
-      setEditingExtra(null);
-      setExtraFormData({ name: '', price: 0, active: true });
-    } catch (error) {
-      console.error('Erro ao guardar o extra:', error);
-      alert('Erro ao guardar o extra');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleEditExtra = (extra: Extra) => {
-    setEditingExtra(extra);
-    setExtraFormData({
-      name: extra.name,
-      price: removeMarkup(extra.price),
-      active: (extra as any).active !== false
-    });
-    setShowExtraFormModal(true);
-  };
-
-  const handleToggleExtraActive = async (extra: Extra) => {
-    try {
-      const newActiveState = !((extra as any).active !== false);
-      await extrasService.updateExtra(extra.id, { active: newActiveState });
-    } catch (error) {
-      console.error('Erro ao mudar o estado do extra:', error);
-      alert('Erro ao alterar o estado do extra');
-    }
-  };
-
-  const handleDeleteExtra = async (extra: Extra) => {
-    if (!confirm(`Tem a certeza que deseja eliminar "${extra.name}"?`)) {
-      return;
-    }
-    try {
-      await extrasService.deleteExtra(extra.id);
-    } catch (error) {
-      console.error('Erro ao apagar o extra:', error);
-      alert('Erro ao eliminar o extra');
-    }
-  };
-
   // Filtrar e ordenar as pizzas
   const filteredAndSortedPizzas = [...pizzas]
     .filter(pizza => {
@@ -318,13 +249,6 @@ export function PizzariaMenu() {
             <p className="text-primary-600">Adicione, modifique e gira</p>
           </div>
           <div className="flex space-x-3">
-            <button
-              onClick={() => setShowExtrasModal(true)}
-              className="flex items-center space-x-2 bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition"
-            >
-              <Settings className="h-5 w-5" />
-              <span>Gerir Extras</span>
-            </button>
             <button
               onClick={() => {
                 setEditingPizza(null);
@@ -590,197 +514,6 @@ export function PizzariaMenu() {
       }
 
 
-      {/* Modal de gestão de extras */}
-      {
-        showExtrasModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-primary-800">Gestão de Extras</h2>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => {
-                        setEditingExtra(null);
-                        setEditingExtra(null);
-                        setExtraFormData({ name: '', price: 0, active: true });
-                        setShowExtraFormModal(true);
-                      }}
-                      className="flex items-center space-x-2 bg-accent-500 text-white px-4 py-2 rounded-md hover:bg-accent-600 transition"
-                    >
-                      <Plus className="h-5 w-5" />
-                      <span>Adicionar Extra</span>
-                    </button>
-                    <button
-                      onClick={() => setShowExtrasModal(false)}
-                      className="px-4 py-2 text-primary-600 hover:text-primary-800"
-                    >
-                      Fechar
-                    </button>
-                  </div>
-                </div>
-
-                {extras.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Settings className="h-16 w-16 text-primary-300 mx-auto mb-4" />
-                    <p className="text-primary-600 mb-4">Nenhum extra configurado</p>
-                    <button
-                      onClick={() => {
-                        setEditingExtra(null);
-                        setEditingExtra(null);
-                        setExtraFormData({ name: '', price: 0, active: true });
-                        setShowExtraFormModal(true);
-                      }}
-                      className="bg-accent-500 text-white px-4 py-2 rounded-md hover:bg-accent-600 transition"
-                    >
-                      Criar o seu primeiro extra
-                    </button>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-primary-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Nome</th>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Preço</th>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Estado</th>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-primary-800">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-primary-100">
-                        {extras.map((extra) => (
-                          <tr key={extra.id} className="hover:bg-primary-50">
-                            <td className="px-6 py-4 text-sm font-medium text-primary-800">
-                              {extra.name}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-primary-600">
-                              {(extra.price || 0).toFixed(2)}€
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(extra as any).active !== false
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                                }`}>
-                                {(extra as any).active !== false ? 'Ativo' : 'Inativo'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => handleToggleExtraActive(extra)}
-                                  className="text-blue-600 hover:text-blue-800 p-1"
-                                  title={(extra as any).active !== false ? 'Desativar' : 'Ativar'}
-                                >
-                                  {(extra as any).active !== false ? (
-                                    <EyeOff className="h-4 w-4" />
-                                  ) : (
-                                    <Eye className="h-4 w-4" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => handleEditExtra(extra)}
-                                  className="text-accent-600 hover:text-accent-800 p-1"
-                                  title="Modificar"
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteExtra(extra)}
-                                  className="text-red-600 hover:text-red-800 p-1"
-                                  title="Eliminar"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      {/* Modal de formulaire extra */}
-      {
-        showExtraFormModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-              <form onSubmit={handleExtraSubmit} className="p-6 space-y-6">
-                <h2 className="text-2xl font-bold text-primary-800">
-                  {editingExtra ? 'Modificar Extra' : 'Adicionar Extra'}
-                </h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">
-                      Nome do Extra
-                    </label>
-                    <input
-                      type="text"
-                      value={extraFormData.name}
-                      onChange={(e) => setExtraFormData({ ...extraFormData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
-                      placeholder="Ex: Mozzarella extra"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">
-                      Preço (€)
-                    </label>
-                    <input
-                      type="number"
-                      id="extra-price"
-                      name="extra-price"
-                      value={extraFormData.price}
-                      onChange={(e) => setExtraFormData({ ...extraFormData, price: Number(e.target.value) })}
-                      className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
-                      min="0.01"
-                      step="0.01"
-                      required
-                      placeholder="0.00"
-                      title="Preço do extra em euros"
-                    />
-                    {extraFormData.price > 0 && (
-                      <p className="text-xs text-green-600 mt-1 font-medium italic">
-                        Final (+10%): {applyMarkup(extraFormData.price).toFixed(2)}€
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowExtraFormModal(false);
-                      setEditingExtra(null);
-                      setExtraFormData({ name: '', price: 0, active: true });
-                    }}
-                    disabled={isSaving}
-                    className="px-4 py-2 text-primary-600 hover:text-primary-800 disabled:opacity-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="px-4 py-2 bg-accent-500 text-white rounded-md hover:bg-accent-600 disabled:opacity-50"
-                  >
-                    {isSaving ? 'A guardar...' : (editingExtra ? 'Modificar' : 'Adicionar')}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )
-      }
       {/* Modal d'ajout/modification */}
       {
         showModal && (

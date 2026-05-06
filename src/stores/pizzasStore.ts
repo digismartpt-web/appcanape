@@ -1,13 +1,11 @@
 import { create } from 'zustand';
-import { productsService, categoriesService, extrasService } from '../services/supabaseService';
-import type { Product, Category, Extra } from '../types';
+import { productsService, categoriesService } from '../services/supabaseService';
+import type { Product, Category } from '../types';
 
 interface ProductsState {
   pizzas: Product[];
   allPizzas: Product[];
   categories: Category[];
-  extras: Extra[];
-  allExtras: Extra[];
   loading: boolean;
   initialized: boolean;
   initPizzasStore: () => () => void;
@@ -17,8 +15,6 @@ export const usePizzasStore = create<ProductsState>((set, get) => ({
   pizzas: [],
   allPizzas: [],
   categories: [],
-  extras: [],
-  allExtras: [],
   loading: true,
   initialized: false,
 
@@ -38,20 +34,10 @@ export const usePizzasStore = create<ProductsState>((set, get) => ({
       set({ categories });
     });
 
-    const unsubActiveExtras = extrasService.subscribeToActiveExtras((extras) => {
-      set({ extras });
-    });
-
-    const unsubAllExtras = extrasService.subscribeToAllExtras((allExtras) => {
-      set({ allExtras });
-    });
-
     return () => {
       unsubActiveProducts();
       unsubAllProducts();
       unsubCategories();
-      unsubActiveExtras();
-      unsubAllExtras();
       set({ initialized: false });
     };
   }
