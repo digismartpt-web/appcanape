@@ -173,7 +173,7 @@ export const useAuth = create<AuthState>((set, get) => ({
         ...data,
         updated_at: new Date().toISOString()
       })
-      .eq('supabase_auth_id', currentUser.id);
+      .eq('id', currentUser.id);
 
     if (error) throw new Error(error.message || 'Erro ao atualizar o perfil');
 
@@ -186,13 +186,13 @@ export const useAuth = create<AuthState>((set, get) => ({
     }));
   },
   
-  // Função utilitária interna para carregar o perfil a partir do supabase_auth_id
+  // Função utilitária interna para carregar o perfil a partir do id (auth.uid)
   _loadUserProfile: async (uid: string, email: string | undefined) => {
     try {
       const { data: profile, error } = await supabase
         .from('users_profiles')
         .select('*')
-        .eq('supabase_auth_id', uid)
+        .eq('id', uid)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -201,7 +201,7 @@ export const useAuth = create<AuthState>((set, get) => ({
 
       if (profile) {
         const userData: User = {
-          id: profile.supabase_auth_id,
+          id: profile.id,
           email: profile.email || email || '',
           full_name: profile.full_name || '',
           phone: profile.phone || '',
