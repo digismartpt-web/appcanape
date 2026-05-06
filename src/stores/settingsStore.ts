@@ -12,8 +12,6 @@ interface SettingsState {
   updateSettings: (newSettings: Partial<PizzariaSettings>) => Promise<boolean>;
 }
 
-const SETTINGS_ROW_ID = 'global-settings';
-
 const defaultSettings: PizzariaSettings = {
   logo_url: '',
   name: '',
@@ -57,7 +55,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   fetchSettings: async () => {
     try {
-      const { data, error } = await supabase.from('settings').select('*').eq('id', SETTINGS_ROW_ID).maybeSingle();
+      const { data, error } = await supabase.from('settings').select('*').limit(1).maybeSingle();
       
       if (error) throw error;
       if (data) {
@@ -96,7 +94,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         table: 'settings' 
       }, (payload: any) => {
         console.log('⚡ [SettingsStore] Mudança Realtime detectada:', payload.eventType);
-        if (payload.new && (payload.new as any).id === SETTINGS_ROW_ID) {
+        if (payload.new) {
           const data = payload.new as any;
           // On merge avec les valeurs par défaut pour éviter les champs manquants
           const merged = { ...get().settings, ...data };
@@ -135,7 +133,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const { error } = await supabase
         .from('settings')
         .update(newSettings)
-        .eq('id', SETTINGS_ROW_ID);
+        .eq('id', currentSettings.id);
 
       if (error) {
         console.error('❌ [SettingsStore] Erro ao atualizar Supabase:', error.message, error.details);
