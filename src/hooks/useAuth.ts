@@ -210,10 +210,23 @@ export const useAuth = create<AuthState>((set, get) => ({
           created_at: profile.created_at
         };
         set({ user: userData, loading: false });
+      } else if (email) {
+        // Utilizador real sem perfil: criar automaticamente com role='client'
+        const now = new Date().toISOString();
+        const { error: insertError } = await supabase
+          .from('users_profiles')
+          .insert({ id: uid, email, role: 'client', full_name: '', phone: '', address: '', created_at: now });
+        if (insertError) {
+          console.error('❌ [Auth] Erro ao criar perfil automaticamente:', insertError);
+          set({ user: null, loading: false });
+          return;
+        }
+        set({
+          user: { id: uid, email, full_name: '', phone: '', address: '', role: 'client', created_at: now },
+          loading: false
+        });
       } else {
-        // O perfil ainda não existe (pode acontecer para uma sessão anónima ainda não ativa ou nova conta)
-        // ATENÇÃO: O trigger DB gere a criação automática para contas reais.
-        // Para as sessões anónimas, pode haver um atraso ou comportamento diferente.
+        // Sessão anónima — sem email, sem perfil
         set({ user: null, loading: false });
       }
     } catch (err) {

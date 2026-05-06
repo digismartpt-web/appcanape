@@ -17,6 +17,8 @@ export function Auth() {
   const { user, signIn, signUp } = useAuth();
 
   if (user) {
+    if (user.role === 'boutique') return <Navigate to="/boutique/commandes" replace />;
+    if (user.role === 'admin') return <Navigate to="/admin" replace />;
     return <Navigate to="/" replace />;
   }
 
