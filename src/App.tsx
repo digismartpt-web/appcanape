@@ -44,18 +44,18 @@ function MainContent() {
           </ProtectedRoute>
         } />
         <Route path="/mes-commandes" element={
-          <ProtectedRoute role="client">
+          <ProtectedRoute roles={['client', 'pro']}>
             <MesCommandes />
           </ProtectedRoute>
         } />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/admin/*" element={
-          <ProtectedRoute role="admin">
+          <ProtectedRoute roles={['admin']}>
             <Admin />
           </ProtectedRoute>
         } />
         <Route path="/boutique/*" element={
-          <ProtectedRoute role="boutique">
+          <ProtectedRoute roles={['boutique', 'admin']}>
             <Boutique />
           </ProtectedRoute>
         } />

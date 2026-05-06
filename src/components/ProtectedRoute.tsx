@@ -4,10 +4,10 @@ import type { UserRole } from '../types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  role?: UserRole;
+  roles?: UserRole[];
 }
 
-export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -22,7 +22,7 @@ export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (role && user.role !== role) {
+  if (roles && !roles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 

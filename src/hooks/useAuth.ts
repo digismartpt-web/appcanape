@@ -112,6 +112,11 @@ export const useAuth = create<AuthState>((set, get) => ({
     // END TODO
     const { error } = await supabaseAuth.auth.signInWithPassword({ email, password });
     if (error) throw new Error(error.message || 'Email ou palavra-passes incorretos');
+    // Load profile immediately so user.role is available before signIn() resolves
+    const { data: { session } } = await supabaseAuth.auth.getSession();
+    if (session?.user) {
+      await get()._loadUserProfile(session.user.id, session.user.email ?? undefined);
+    }
   },
 
   signUp: async (email, password, userData) => {
