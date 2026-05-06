@@ -117,6 +117,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (session?.user) {
       await get()._loadUserProfile(session.user.id, session.user.email ?? undefined);
     }
+    console.log('[AUTH] Rôle détecté:', get().user?.role);
   },
 
   signUp: async (email, password, userData) => {
@@ -204,6 +205,7 @@ export const useAuth = create<AuthState>((set, get) => ({
         throw error;
       }
 
+      console.log('[AUTH] Profil chargé:', profile);
       if (profile) {
         const userData: User = {
           id: profile.id,

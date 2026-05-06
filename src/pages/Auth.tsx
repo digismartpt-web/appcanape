@@ -17,8 +17,10 @@ export function Auth() {
   const { user, signIn, signUp } = useAuth();
 
   if (user) {
-    if (user.role === 'boutique' || user.role === 'admin') return <Navigate to="/boutique/commandes" replace />;
-    return <Navigate to="/" replace />;
+    console.log('[AUTH] Redirection depuis Auth.tsx, rôle:', user?.role);
+    const destination = (user.role === 'boutique' || user.role === 'admin') ? '/boutique/commandes' : '/';
+    console.log('[AUTH] Redirection vers:', destination);
+    return <Navigate to={destination} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
