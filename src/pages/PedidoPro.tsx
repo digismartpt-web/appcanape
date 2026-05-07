@@ -152,7 +152,7 @@ export function PedidoPro() {
         // Create profile immediately so this user is recognised as a canape client on first login
         const now = new Date().toISOString();
         await supabase
-          .from('users_profiles')
+          .from('users_canape')
           .insert({
             id: userId,
             email: form.email.trim(),

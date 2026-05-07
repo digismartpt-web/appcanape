@@ -64,7 +64,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   fetchSettings: async () => {
     try {
-      const { data, error } = await supabase.from('settings').select('*').limit(1).maybeSingle();
+      const { data, error } = await supabase.from('settings_canape').select('*').limit(1).maybeSingle();
       
       if (error) throw error;
       if (data) {
@@ -100,7 +100,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
-        table: 'settings' 
+        table: 'settings_canape'
       }, (payload: any) => {
         console.log('⚡ [SettingsStore] Mudança Realtime detectada:', payload.eventType);
         if (payload.new) {
@@ -145,7 +145,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       );
 
       const { error } = await supabase
-        .from('settings')
+        .from('settings_canape')
         .update(dbPayload)
         .eq('id', currentSettings.id);
 

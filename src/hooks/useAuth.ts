@@ -142,7 +142,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (uid) {
       const now = new Date().toISOString();
       const { error: profileError } = await supabase
-        .from('users_profiles')
+        .from('users_canape')
         .insert({
           id: uid,
           email,
@@ -189,7 +189,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (!currentUser) throw new Error('Utilizador não ligado');
 
     const { error } = await supabase
-      .from('users_profiles')
+      .from('users_canape')
       .update({ ...data })
       .eq('id', currentUser.id);
 
@@ -209,7 +209,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   _loadUserProfile: async (uid: string, email: string | undefined, allowCreate = false) => {
     try {
       const { data: profile, error } = await supabase
-        .from('users_profiles')
+        .from('users_canape')
         .select('*')
         .eq('id', uid)
         .maybeSingle();
@@ -236,7 +236,7 @@ export const useAuth = create<AuthState>((set, get) => ({
         // Inscrição nova — criar perfil com role='client'
         const now = new Date().toISOString();
         const { error: insertError } = await supabase
-          .from('users_profiles')
+          .from('users_canape')
           .insert({ id: uid, email, role: 'client', full_name: '', phone: '', address: '', created_at: now });
         if (insertError) {
           console.error('❌ [Auth] Erro ao criar perfil automaticamente:', insertError);

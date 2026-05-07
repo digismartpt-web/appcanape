@@ -2,14 +2,15 @@ import { supabase, supabaseAuth } from '../lib/supabase';
 import type { Product, ProductImage, ProductSize, Order, User, OrderStatus, PromotionRule, ProRequest, ProRequestStatus } from '../types';
 
 export const COLLECTIONS = {
-  USERS: 'users_profiles',
-  PRODUCTS: 'products',
-  ORDERS: 'orders',
-  PROMOTIONS: 'promotions',
-  BANNER_GALLERY: 'banner_gallery',
-  CATEGORIES: 'categories',
-  PRODUCT_IMAGES: 'product_images',
-  PRO_REQUESTS: 'pro_requests'
+  USERS: 'users_canape',
+  PRODUCTS: 'products_canape',
+  ORDERS: 'orders_canape',
+  PROMOTIONS: 'promotions_canape',
+  BANNER_GALLERY: 'banner_canape',
+  CATEGORIES: 'categories_canape',
+  PRODUCT_IMAGES: 'product_images_canape',
+  PRO_REQUESTS: 'pro_requests_canape',
+  SETTINGS: 'settings_canape'
 } as const;
 
 const SCHEMA = 'canape_module';
