@@ -447,7 +447,7 @@ export function BoutiqueMenu() {
                     <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
                       className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-accent-500 focus:outline-none">
                       <option value="">— Selecionar —</option>
-                      {activeCategories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                      {activeCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                     </select>
                   </div>
                   <div className="flex items-center gap-2">

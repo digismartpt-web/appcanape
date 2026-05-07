@@ -572,7 +572,7 @@ export const categoriesService = {
     // TODO: REMOVE BEFORE PRODUCTION
     if (isTestUser()) return;
     // END TODO
-    const { error } = await supabase.from(COLLECTIONS.CATEGORIES).update({ ...categoryData, updated_at: new Date().toISOString() }).eq('id', categoryId);
+    const { error } = await supabase.from(COLLECTIONS.CATEGORIES).update(categoryData).eq('id', categoryId);
     if (error) throw new Error(error.message);
   },
 
