@@ -190,10 +190,7 @@ export const useAuth = create<AuthState>((set, get) => ({
 
     const { error } = await supabase
       .from('users_profiles')
-      .update({
-        ...data,
-        updated_at: new Date().toISOString()
-      })
+      .update({ ...data })
       .eq('id', currentUser.id);
 
     if (error) throw new Error(error.message || 'Erro ao atualizar o perfil');

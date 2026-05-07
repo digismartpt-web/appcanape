@@ -121,28 +121,19 @@ export default function MesCommandes() {
         {/* Pro access status banners */}
         {proRequest !== undefined && (
           <>
-            {user?.pro_validated && proRequest?.status === 'approved' && (
+            {proRequest?.status === 'approved' && (
               <div className="mb-6 flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4">
                 <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-green-800">Acesso profissional ativo</p>
-                  <p className="text-sm text-green-700 mt-0.5">
-                    O seu pedido de acesso profissional foi aprovado! Já tem acesso aos preços profissionais
-                    {user.pro_discount_percent ? ` com ${user.pro_discount_percent}% de desconto` : ''}.
-                  </p>
-                </div>
+                <p className="text-sm text-green-800">
+                  Tem acesso profissional ativo.{user?.pro_discount_percent ? ` Desconto de ${user.pro_discount_percent}% aplicado.` : ''}
+                </p>
               </div>
             )}
 
             {proRequest?.status === 'pending' && (
               <div className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-800">Pedido em análise</p>
-                  <p className="text-sm text-amber-700 mt-0.5">
-                    O seu pedido de acesso profissional está em análise. Entraremos em contacto em breve.
-                  </p>
-                </div>
+                <p className="text-sm text-amber-800">O seu pedido de acesso profissional está em análise.</p>
               </div>
             )}
 
@@ -150,33 +141,15 @@ export default function MesCommandes() {
               <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
                 <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-red-800">Pedido rejeitado</p>
-                  {proRequest.rejection_reason && (
-                    <p className="text-sm text-red-700 mt-0.5">
-                      <strong>Motivo:</strong> {proRequest.rejection_reason}
-                    </p>
-                  )}
+                  <p className="text-sm text-red-800">
+                    O seu pedido foi rejeitado.{proRequest.rejection_reason ? ` Motivo: ${proRequest.rejection_reason}` : ''}
+                  </p>
                   <Link
                     to="/acesso-profissional"
                     className="inline-block mt-2 text-sm font-medium text-red-800 underline hover:text-red-900"
                   >
                     Submeter um novo pedido
                   </Link>
-                </div>
-              </div>
-            )}
-
-            {!proRequest && !user?.pro_validated && (
-              <div className="mb-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-blue-800">
-                    Ainda não pediu acesso profissional.{' '}
-                    <Link to="/acesso-profissional" className="font-semibold underline hover:text-blue-900">
-                      Solicitar agora
-                    </Link>
-                    {' '}e aceda a preços exclusivos.
-                  </p>
                 </div>
               </div>
             )}
