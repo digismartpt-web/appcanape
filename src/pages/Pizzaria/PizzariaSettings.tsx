@@ -338,8 +338,8 @@ export function PizzariaSettings() {
               type="number"
               id="min-delivery-amount"
               name="min-delivery-amount"
-              value={settings.min_delivery_amount ?? ''}
-              onChange={(e) => updateField('min_delivery_amount', e.target.value ? Number(e.target.value) : 0)}
+              value={settings.min_order_amount ?? ''}
+              onChange={(e) => updateField('min_order_amount', e.target.value ? Number(e.target.value) : 0)}
               className="w-full px-3 py-2 border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
               placeholder="Ex: 10"
               min="0"

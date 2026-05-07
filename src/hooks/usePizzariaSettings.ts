@@ -22,10 +22,10 @@ export interface PizzariaSettings {
     saturday: string;
     sunday: string;
   };
-  // UI-only fields (not persisted to DB)
   delivery_fee?: number;
-  min_delivery_amount?: number;
+  min_order_amount?: number;
   cutoff_minutes_before_closing?: number;
+  banner_image_url?: string;
 }
 
 export function usePizzariaSettings() {

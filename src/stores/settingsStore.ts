@@ -14,10 +14,11 @@ interface SettingsState {
 
 // Columns that exist in canape_module.settings — never send anything outside this list
 const DB_COLUMNS = new Set([
-  'address', 'available_banner_images', 'banner_active', 'banner_interval',
-  'closing_message', 'currency', 'delivery_enabled', 'email', 'estimated_delivery_days',
-  'is_open', 'logo_url', 'maintenance_mode', 'name', 'notification_sound',
-  'opening_hours', 'opening_message', 'phone', 'pickup_enabled', 'preparation_time',
+  'address', 'available_banner_images', 'banner_active', 'banner_image_url', 'banner_interval',
+  'closing_message', 'currency', 'cutoff_minutes_before_closing', 'delivery_enabled', 'delivery_fee',
+  'email', 'estimated_delivery_days', 'free_delivery_threshold',
+  'is_open', 'logo_url', 'maintenance_mode', 'max_delivery_distance', 'min_order_amount', 'name',
+  'notification_sound', 'opening_hours', 'opening_message', 'phone', 'pickup_enabled', 'preparation_time',
   'primary_color', 'secondary_color', 'social_facebook', 'social_instagram',
   'social_linkedin', 'social_tiktok', 'stripe_account_id'
 ]);
@@ -33,7 +34,11 @@ const defaultSettings: PizzariaSettings = {
   notification_sound: '',
   preparation_time: 10,
   banner_active: false,
+  banner_image_url: '',
   available_banner_images: [],
+  delivery_fee: 0,
+  min_order_amount: 0,
+  cutoff_minutes_before_closing: 30,
   opening_hours: {
     monday: '11h30-22h30',
     tuesday: '11h30-22h30',

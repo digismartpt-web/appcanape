@@ -169,8 +169,8 @@ export function BoutiqueSettings() {
             <div>
               <label className="block text-sm font-medium text-primary-700 mb-1">Montante mínimo para entrega (€)</label>
               <input type="number" min="0" step="0.50"
-                value={settings.min_delivery_amount ?? ''}
-                onChange={e => updateField('min_delivery_amount', e.target.value ? Number(e.target.value) : 0)}
+                value={settings.min_order_amount ?? ''}
+                onChange={e => updateField('min_order_amount', e.target.value ? Number(e.target.value) : 0)}
                 placeholder="Ex: 50"
                 className="w-full px-3 py-2 border border-primary-300 rounded-md focus:ring-2 focus:ring-accent-500 focus:outline-none" />
             </div>
