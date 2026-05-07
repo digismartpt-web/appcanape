@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Building2, CheckCircle, Clock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useProRequestsStore } from '../stores/proRequestsStore';
-import { supabaseAuth } from '../lib/supabase';
+import { supabase, supabaseAuth } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 const ACTIVITY_SECTORS = [
@@ -148,6 +148,19 @@ export function PedidoPro() {
         if (signUpError) throw new Error(signUpError.message);
         userId = signUpData.user?.id;
         if (!userId) throw new Error('Erro ao criar conta. Tente novamente.');
+
+        // Create profile immediately so this user is recognised as a canape client on first login
+        const now = new Date().toISOString();
+        await supabase
+          .from('users_profiles')
+          .insert({
+            id: userId,
+            email: form.email.trim(),
+            role: 'client',
+            full_name: form.full_name.trim(),
+            phone: form.phone.trim(),
+            created_at: now
+          });
       }
 
       const address = `${form.morada.trim()}, ${form.codigo_postal.trim()} ${form.localidade.trim()}`;

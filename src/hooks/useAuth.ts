@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase, supabaseAuth } from '../lib/supabase';
 import type { User, UserRole } from '../types';
+import toast from 'react-hot-toast';
 
 // TODO: REMOVE BEFORE PRODUCTION — hardcoded test accounts
 const TEST_USERS: Record<string, User> = {
@@ -44,7 +45,7 @@ interface AuthState {
   signOut: () => Promise<void>;
   updateProfile: (data: ProfileUpdateData) => Promise<void>;
   initializeAuth: () => void;
-  _loadUserProfile: (uid: string, email: string | undefined) => Promise<void>;
+  _loadUserProfile: (uid: string, email: string | undefined, allowCreate?: boolean) => Promise<void>;
 }
 
 export const useAuth = create<AuthState>((set, get) => ({
@@ -121,8 +122,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 
   signUp: async (email, password, userData) => {
-    // 1. Criar a conta Auth
-    const { error: authError } = await supabaseAuth.auth.signUp({
+    const { data: signUpData, error: authError } = await supabaseAuth.auth.signUp({
       email,
       password,
       options: {
@@ -136,9 +136,24 @@ export const useAuth = create<AuthState>((set, get) => ({
     });
 
     if (authError) throw new Error(authError.message || 'Erro durante a inscrição no Supabase Auth');
-    
-    // O perfil será automaticamente criado por um trigger SQL no Supabase.
-    // O utilizador receberá um email de confirmação conforme as definições do Supabase.
+
+    // Create profile immediately so _loadUserProfile never treats this user as an outsider
+    const uid = signUpData.user?.id;
+    if (uid) {
+      const now = new Date().toISOString();
+      const { error: profileError } = await supabase
+        .from('users_profiles')
+        .insert({
+          id: uid,
+          email,
+          role: 'client',
+          full_name: userData.full_name,
+          phone: userData.phone,
+          address: userData.address,
+          created_at: now
+        });
+      if (profileError) console.error('[AUTH] Erro ao criar perfil na inscrição:', profileError);
+    }
   },
 
   signOut: async () => {
@@ -193,7 +208,8 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
   
   // Função utilitária interna para carregar o perfil a partir do id (auth.uid)
-  _loadUserProfile: async (uid: string, email: string | undefined) => {
+  // allowCreate=true apenas no contexto de inscrição — nunca em signIn ou restauro de sessão
+  _loadUserProfile: async (uid: string, email: string | undefined, allowCreate = false) => {
     try {
       const { data: profile, error } = await supabase
         .from('users_profiles')
@@ -219,8 +235,8 @@ export const useAuth = create<AuthState>((set, get) => ({
           pro_discount_percent: profile.pro_discount_percent ?? 0,
         };
         set({ user: userData, loading: false });
-      } else if (email) {
-        // Utilizador real sem perfil: criar automaticamente com role='client'
+      } else if (email && allowCreate) {
+        // Inscrição nova — criar perfil com role='client'
         const now = new Date().toISOString();
         const { error: insertError } = await supabase
           .from('users_profiles')
@@ -231,9 +247,15 @@ export const useAuth = create<AuthState>((set, get) => ({
           return;
         }
         set({
-          user: { id: uid, email, full_name: '', phone: '', address: '', role: 'client', created_at: now },
+          user: { id: uid, email, full_name: '', phone: '', address: '', role: 'client', created_at: now, pro_validated: false, pro_discount_percent: 0 },
           loading: false
         });
+      } else if (email && !allowCreate) {
+        // Conta Auth sem perfil nesta loja — utilizador de outra aplicação
+        console.warn('[AUTH] Conta sem perfil nesta loja — a desligar');
+        await supabaseAuth.auth.signOut();
+        toast.error('Esta conta não tem acesso a esta loja.');
+        set({ user: null, loading: false });
       } else {
         // Sessão anónima — sem email, sem perfil
         set({ user: null, loading: false });
