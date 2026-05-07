@@ -1,25 +1,18 @@
 import { useSettingsStore } from '../stores/settingsStore';
 
 export interface PizzariaSettings {
+  id?: string;
   logo_url: string;
   name: string;
   address: string;
   phone: string;
   email: string;
-  delete_password?: string;
   is_open: boolean;
-  max_delivery_distance?: number;
-  min_delivery_amount?: number;
-  delivery_fee?: number;
-  default_preparation_time?: number;
-  default_delivery_time?: number;
-  cutoff_minutes_before_closing?: number;
   estimated_delivery_days?: number;
-  notification_sound_url?: string;
+  notification_sound?: string;
+  preparation_time?: number;
   banner_active?: boolean;
-  banner_image_url?: string;
   available_banner_images?: string[];
-  service_fee_percentage?: number;
   opening_hours: {
     monday: string;
     tuesday: string;
@@ -29,6 +22,10 @@ export interface PizzariaSettings {
     saturday: string;
     sunday: string;
   };
+  // UI-only fields (not persisted to DB)
+  delivery_fee?: number;
+  min_delivery_amount?: number;
+  cutoff_minutes_before_closing?: number;
 }
 
 export function usePizzariaSettings() {

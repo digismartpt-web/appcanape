@@ -19,9 +19,9 @@ export function BoutiqueSettings() {
   useEffect(() => {
     if (remoteSettings) {
       setSettings(remoteSettings);
-      if (remoteSettings.notification_sound_url) {
-        audioNotificationService.setCustomSoundUrl(remoteSettings.notification_sound_url);
-        const parts = remoteSettings.notification_sound_url.split('/');
+      if (remoteSettings.notification_sound) {
+        audioNotificationService.setCustomSoundUrl(remoteSettings.notification_sound);
+        const parts = remoteSettings.notification_sound.split('/');
         setSoundFileName(decodeURIComponent(parts[parts.length - 1]));
       }
     }
@@ -73,8 +73,8 @@ export function BoutiqueSettings() {
       const { error } = await supabase.storage.from('notification-sounds').upload(fileName, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from('notification-sounds').getPublicUrl(fileName);
-      await updateSettings({ notification_sound_url: data.publicUrl });
-      updateField('notification_sound_url', data.publicUrl);
+      await updateSettings({ notification_sound: data.publicUrl });
+      updateField('notification_sound', data.publicUrl);
       audioNotificationService.setCustomSoundUrl(data.publicUrl);
       setSoundFileName(file.name);
       setMessage({ type: 'success', text: 'Som carregado com sucesso!' });

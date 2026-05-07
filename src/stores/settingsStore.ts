@@ -12,6 +12,16 @@ interface SettingsState {
   updateSettings: (newSettings: Partial<PizzariaSettings>) => Promise<boolean>;
 }
 
+// Columns that exist in canape_module.settings — never send anything outside this list
+const DB_COLUMNS = new Set([
+  'address', 'available_banner_images', 'banner_active', 'banner_interval',
+  'closing_message', 'currency', 'delivery_enabled', 'email', 'estimated_delivery_days',
+  'is_open', 'logo_url', 'maintenance_mode', 'name', 'notification_sound',
+  'opening_hours', 'opening_message', 'phone', 'pickup_enabled', 'preparation_time',
+  'primary_color', 'secondary_color', 'social_facebook', 'social_instagram',
+  'social_linkedin', 'social_tiktok', 'stripe_account_id'
+]);
+
 const defaultSettings: PizzariaSettings = {
   logo_url: '',
   name: '',
@@ -19,17 +29,11 @@ const defaultSettings: PizzariaSettings = {
   phone: '',
   email: '',
   is_open: true,
-  delivery_fee: 0,
-  min_delivery_amount: 10,
-  default_preparation_time: 10,
-  default_delivery_time: 30,
-  cutoff_minutes_before_closing: 30,
   estimated_delivery_days: 14,
-  notification_sound_url: '',
+  notification_sound: '',
+  preparation_time: 10,
   banner_active: false,
-  banner_image_url: '',
   available_banner_images: [],
-  service_fee_percentage: 10,
   opening_hours: {
     monday: '11h30-22h30',
     tuesday: '11h30-22h30',
@@ -130,9 +134,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (sessionStorage.getItem('dev_test_user')) return true;
       // END TODO
 
+      // Strip fields that don't exist in canape_module.settings
+      const dbPayload = Object.fromEntries(
+        Object.entries(newSettings).filter(([key]) => DB_COLUMNS.has(key))
+      );
+
       const { error } = await supabase
         .from('settings')
-        .update(newSettings)
+        .update(dbPayload)
         .eq('id', currentSettings.id);
 
       if (error) {
