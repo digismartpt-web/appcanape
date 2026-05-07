@@ -734,7 +734,7 @@ export const bannerGalleryService = {
     // TODO: REMOVE BEFORE PRODUCTION
     if (isTestUser()) return crypto.randomUUID();
     // END TODO
-    const { data, error } = await supabase.from(COLLECTIONS.BANNER_GALLERY).insert({ image_url: url, name }).select('id').single();
+    const { data, error } = await supabase.from(COLLECTIONS.BANNER_GALLERY).insert({ image_url: url }).select('id').single();
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Imagem inserida mas sem resposta do servidor — verifique as permissões RLS');
     return data.id;
