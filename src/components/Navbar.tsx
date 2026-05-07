@@ -4,7 +4,6 @@ import { Menu, X, Store, User, LogOut, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { CartButton } from './CartButton';
 import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
-import { checkOpeningHours } from '../services/openingHoursService';
 import toast from 'react-hot-toast';
 
 interface NavbarProps {
@@ -36,13 +35,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
     }
   };
 
-  let openingHoursCheck = { isOpen: false };
-  try {
-    openingHoursCheck = settings.opening_hours ? checkOpeningHours(settings.opening_hours) : { isOpen: false };
-  } catch (error) {
-    console.error('Erro ao verificar os horários:', error);
-  }
-  const canOrder = settings.is_open && openingHoursCheck.isOpen;
+  const canOrder = settings.is_open;
   const isPro = user?.pro_validated === true;
 
   return (

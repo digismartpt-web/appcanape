@@ -151,7 +151,11 @@ export function BoutiqueSettings() {
               </p>
             </div>
             <button type="button"
-              onClick={() => setSettings(prev => prev ? { ...prev, is_open: !prev.is_open } : null)}
+              onClick={async () => {
+                const newValue = !settings.is_open;
+                setSettings(prev => prev ? { ...prev, is_open: newValue } : null);
+                await updateSettings({ is_open: newValue });
+              }}
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${settings.is_open ? 'bg-green-500' : 'bg-red-500'}`}>
               <span className={`inline-block h-6 w-6 rounded-full bg-white transition-transform ${settings.is_open ? 'translate-x-7' : 'translate-x-1'}`} />
             </button>
