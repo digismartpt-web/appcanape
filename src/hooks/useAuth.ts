@@ -214,7 +214,9 @@ export const useAuth = create<AuthState>((set, get) => ({
           phone: profile.phone || '',
           address: profile.address || '',
           role: profile.role || 'client',
-          created_at: profile.created_at
+          created_at: profile.created_at,
+          pro_validated: profile.pro_validated ?? false,
+          pro_discount_percent: profile.pro_discount_percent ?? 0,
         };
         set({ user: userData, loading: false });
       } else if (email) {

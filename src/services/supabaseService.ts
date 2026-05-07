@@ -828,31 +828,31 @@ export const proRequestsService = {
     return result.id;
   },
 
-  async approveProRequest(requestId: string, userId: string, discountPercent: number, reviewedBy?: string): Promise<void> {
+  async approveProRequest(requestId: string, userId: string, discountPercent: number, _reviewedBy?: string): Promise<void> {
     // TODO: REMOVE BEFORE PRODUCTION
     if (isTestUser()) return;
     // END TODO
     const now = new Date().toISOString();
     const { error: reqError } = await supabase
       .from(COLLECTIONS.PRO_REQUESTS)
-      .update({ status: 'approved', reviewed_by: reviewedBy, reviewed_at: now, updated_at: now })
+      .update({ status: 'approved', reviewed_at: now })
       .eq('id', requestId);
     if (reqError) throw new Error(reqError.message);
     const { error: userError } = await supabase
       .from(COLLECTIONS.USERS)
-      .update({ pro_validated: true, pro_discount_percent: discountPercent, pro_validated_at: now, pro_validated_by: reviewedBy, role: 'pro', updated_at: now })
+      .update({ role: 'pro', pro_validated: true, pro_discount_percent: discountPercent, pro_validated_at: now })
       .eq('id', userId);
     if (userError) throw new Error(userError.message);
   },
 
-  async rejectProRequest(requestId: string, reason: string, reviewedBy?: string): Promise<void> {
+  async rejectProRequest(requestId: string, reason: string, _reviewedBy?: string): Promise<void> {
     // TODO: REMOVE BEFORE PRODUCTION
     if (isTestUser()) return;
     // END TODO
     const now = new Date().toISOString();
     const { error } = await supabase
       .from(COLLECTIONS.PRO_REQUESTS)
-      .update({ status: 'rejected', rejection_reason: reason, reviewed_by: reviewedBy, reviewed_at: now, updated_at: now })
+      .update({ status: 'rejected', rejection_reason: reason, reviewed_at: now })
       .eq('id', requestId);
     if (error) throw new Error(error.message);
   },
@@ -863,7 +863,7 @@ export const proRequestsService = {
     // END TODO
     const { error } = await supabase
       .from(COLLECTIONS.USERS)
-      .update({ pro_discount_percent: discountPercent, updated_at: new Date().toISOString() })
+      .update({ pro_discount_percent: discountPercent })
       .eq('id', userId);
     if (error) throw new Error(error.message);
   },

@@ -202,7 +202,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
           {/* Botão adicionar */}
           <div className="sticky bottom-0 bg-white pt-4 border-t">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-medium">Total :</span>
+              <span className="text-lg font-medium">Total:</span>
               <span className="text-2xl font-bold text-accent-600">{calculateTotal().toFixed(2)}€</span>
             </div>
             <button onClick={handleAddToCart}

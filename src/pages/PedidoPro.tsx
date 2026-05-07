@@ -399,6 +399,10 @@ export function PedidoPro() {
           </Field>
         </div>
 
+        <p className="text-sm text-gray-500 text-center">
+          Enquanto o seu pedido está em análise, terá acesso à loja como cliente normal. Após aprovação, os seus preços profissionais serão automaticamente aplicados.
+        </p>
+
         <button
           type="submit"
           disabled={loading}
