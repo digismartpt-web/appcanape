@@ -63,7 +63,7 @@ export const useProRequestsStore = create<ProRequestsState>((set, get) => ({
           r.id === requestId ? { ...r, status: 'approved' as ProRequestStatus } : r
         )
       }));
-      toast.success('Pedido aprovado com sucesso');
+      toast.success('Cliente pro aprovado com sucesso. O cliente foi notificado.');
     } catch (err: any) {
       toast.error(err.message);
       throw err;

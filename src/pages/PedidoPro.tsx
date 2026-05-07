@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, CheckCircle, Clock } from 'lucide-react';
+import { Building2, CheckCircle, Clock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useProRequestsStore } from '../stores/proRequestsStore';
+import { supabaseAuth } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 const ACTIVITY_SECTORS = [
@@ -60,12 +61,17 @@ export function PedidoPro() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [form, setForm] = useState({
     // Personal
     full_name: user?.full_name || '',
     email: user?.email || '',
     phone: '',
+    // Password (only for non-logged users)
+    password: '',
+    confirm_password: '',
     // Company
     company_name: '',
     nif: '',
@@ -89,6 +95,18 @@ export function PedidoPro() {
     if (!form.full_name.trim()) newErrors.full_name = 'Campo obrigatório';
     if (!form.email.trim()) newErrors.email = 'Campo obrigatório';
     if (!form.phone.trim()) newErrors.phone = 'Campo obrigatório';
+    if (!user) {
+      if (!form.password) {
+        newErrors.password = 'Campo obrigatório';
+      } else if (form.password.length < 8) {
+        newErrors.password = 'Mínimo 8 caracteres';
+      }
+      if (!form.confirm_password) {
+        newErrors.confirm_password = 'Campo obrigatório';
+      } else if (form.password !== form.confirm_password) {
+        newErrors.confirm_password = 'As palavras-passe não coincidem';
+      }
+    }
     if (!form.company_name.trim()) newErrors.company_name = 'Campo obrigatório';
     if (!form.nif.trim()) {
       newErrors.nif = 'Campo obrigatório';
@@ -117,6 +135,21 @@ export function PedidoPro() {
 
     setLoading(true);
     try {
+      let userId = user?.id;
+
+      if (!user) {
+        const { data: signUpData, error: signUpError } = await supabaseAuth.auth.signUp({
+          email: form.email.trim(),
+          password: form.password,
+          options: {
+            data: { full_name: form.full_name.trim() }
+          }
+        });
+        if (signUpError) throw new Error(signUpError.message);
+        userId = signUpData.user?.id;
+        if (!userId) throw new Error('Erro ao criar conta. Tente novamente.');
+      }
+
       const address = `${form.morada.trim()}, ${form.codigo_postal.trim()} ${form.localidade.trim()}`;
       const messageParts = [
         `Nome do contacto: ${form.full_name.trim()}`,
@@ -125,7 +158,7 @@ export function PedidoPro() {
       if (form.message.trim()) messageParts.push(`\nMensagem: ${form.message.trim()}`);
 
       await submitRequest({
-        user_id: user?.id,
+        user_id: userId,
         company_name: form.company_name.trim(),
         nif: form.nif.trim(),
         email: form.email.trim(),
@@ -135,8 +168,8 @@ export function PedidoPro() {
         message: messageParts.join('\n')
       });
       setSubmitted(true);
-    } catch {
-      // error toast handled in store
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar pedido. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -211,6 +244,51 @@ export function PedidoPro() {
               className={errors.phone ? INPUT_ERROR_CLASS : INPUT_CLASS}
             />
           </Field>
+
+          {/* Password fields — only for non-logged users */}
+          {!user && (
+            <>
+              <Field label="Palavra-passe" required error={errors.password}>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Mínimo 8 caracteres"
+                    className={`${errors.password ? INPUT_ERROR_CLASS : INPUT_CLASS} pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </Field>
+
+              <Field label="Confirmar palavra-passe" required error={errors.confirm_password}>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirm_password"
+                    value={form.confirm_password}
+                    onChange={handleChange}
+                    placeholder="Repita a palavra-passe"
+                    className={`${errors.confirm_password ? INPUT_ERROR_CLASS : INPUT_CLASS} pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </Field>
+            </>
+          )}
         </div>
 
         {/* Informações da empresa */}

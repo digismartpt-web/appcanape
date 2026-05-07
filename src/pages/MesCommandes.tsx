@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Clock, Package, CheckCircle, XCircle, Eye, Phone, Mail, MapPin, Truck, Store, CreditCard, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Clock, Package, CheckCircle, XCircle, Eye, Phone, Mail, MapPin, Truck, Store, CreditCard, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { usePizzariaSettings } from '../hooks/usePizzariaSettings';
-import { ordersService } from '../services/supabaseService';
+import { ordersService, proRequestsService } from '../services/supabaseService';
 import { checkOpeningHours } from '../services/openingHoursService';
-import type { Order } from '../types';
+import type { Order, ProRequest } from '../types';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   pending:             { label: 'Pagamento pendente',      color: 'bg-gray-100 text-gray-800',     icon: Clock },
@@ -29,6 +30,7 @@ export default function MesCommandes() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState<string | null>(null);
+  const [proRequest, setProRequest] = useState<ProRequest | null | undefined>(undefined);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -37,6 +39,13 @@ export default function MesCommandes() {
       setLoading(false);
     });
     return unsubscribe;
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    proRequestsService.fetchMyProRequest(user.id)
+      .then(req => setProRequest(req))
+      .catch(() => setProRequest(null));
   }, [user?.id]);
 
   const formatDate = (dateString: string) =>
@@ -108,6 +117,71 @@ export default function MesCommandes() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">As Minhas Encomendas</h1>
           <p className="mt-2 text-sm sm:text-base text-gray-600">Acompanhe o estado das suas encomendas em tempo real</p>
         </div>
+
+        {/* Pro access status banners */}
+        {proRequest !== undefined && (
+          <>
+            {user?.pro_validated && proRequest?.status === 'approved' && (
+              <div className="mb-6 flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4">
+                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-green-800">Acesso profissional ativo</p>
+                  <p className="text-sm text-green-700 mt-0.5">
+                    O seu pedido de acesso profissional foi aprovado! Já tem acesso aos preços profissionais
+                    {user.pro_discount_percent ? ` com ${user.pro_discount_percent}% de desconto` : ''}.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {proRequest?.status === 'pending' && (
+              <div className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">Pedido em análise</p>
+                  <p className="text-sm text-amber-700 mt-0.5">
+                    O seu pedido de acesso profissional está em análise. Entraremos em contacto em breve.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {proRequest?.status === 'rejected' && (
+              <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-red-800">Pedido rejeitado</p>
+                  {proRequest.rejection_reason && (
+                    <p className="text-sm text-red-700 mt-0.5">
+                      <strong>Motivo:</strong> {proRequest.rejection_reason}
+                    </p>
+                  )}
+                  <Link
+                    to="/acesso-profissional"
+                    className="inline-block mt-2 text-sm font-medium text-red-800 underline hover:text-red-900"
+                  >
+                    Submeter um novo pedido
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {!proRequest && !user?.pro_validated && (
+              <div className="mb-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-blue-800">
+                    Ainda não pediu acesso profissional.{' '}
+                    <Link to="/acesso-profissional" className="font-semibold underline hover:text-blue-900">
+                      Solicitar agora
+                    </Link>
+                    {' '}e aceda a preços exclusivos.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {orders.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">

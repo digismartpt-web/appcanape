@@ -793,6 +793,18 @@ export const proRequestsService = {
     return (data || []) as User[];
   },
 
+  async fetchMyProRequest(userId: string): Promise<ProRequest | null> {
+    const { data, error } = await supabase
+      .from(COLLECTIONS.PRO_REQUESTS)
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data as ProRequest | null;
+  },
+
   async submitProRequest(data: {
     user_id?: string;
     company_name: string;

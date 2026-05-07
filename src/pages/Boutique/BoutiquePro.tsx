@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UserCheck, Check, X } from 'lucide-react';
+import { UserCheck, Check, X, Pencil } from 'lucide-react';
 import { useProRequestsStore } from '../../stores/proRequestsStore';
 import { proRequestsService } from '../../services/supabaseService';
 import { useAuth } from '../../hooks/useAuth';
@@ -40,19 +40,17 @@ export function BoutiquePro() {
   const [submitting, setSubmitting] = useState(false);
 
   const [proClients, setProClients] = useState<User[]>([]);
-  const [clientDiscounts, setClientDiscounts] = useState<Record<string, number>>({});
-  const [savingDiscount, setSavingDiscount] = useState<string | null>(null);
+  const [editDiscountModal, setEditDiscountModal] = useState<{ client: User; discount: number } | null>(null);
+  const [savingDiscount, setSavingDiscount] = useState(false);
+
+  const refreshProClients = () =>
+    proRequestsService.fetchProClients()
+      .then(clients => setProClients(clients))
+      .catch(() => {});
 
   useEffect(() => {
     fetchRequests();
-    proRequestsService.fetchProClients()
-      .then(clients => {
-        setProClients(clients);
-        const initial: Record<string, number> = {};
-        clients.forEach(c => { initial[c.id] = c.pro_discount_percent ?? 0; });
-        setClientDiscounts(initial);
-      })
-      .catch(() => {});
+    refreshProClients();
   }, []);
 
   const filtered = filter === 'all' ? requests : requests.filter(r => r.status === filter);
@@ -64,6 +62,7 @@ export function BoutiquePro() {
       await approveRequest(approveModal.id, approveModal.user_id, discountPercent, user?.id);
       setApproveModal(null);
       setDiscountPercent(10);
+      refreshProClients();
     } catch {
       // handled in store
     } finally {
@@ -89,15 +88,24 @@ export function BoutiquePro() {
     }
   };
 
-  const handleSaveDiscount = async (userId: string) => {
-    setSavingDiscount(userId);
+  const handleSaveDiscount = async () => {
+    if (!editDiscountModal) return;
+    setSavingDiscount(true);
     try {
-      await proRequestsService.updateProDiscount(userId, clientDiscounts[userId] ?? 0);
+      await proRequestsService.updateProDiscount(editDiscountModal.client.id, editDiscountModal.discount);
+      setProClients(prev =>
+        prev.map(c =>
+          c.id === editDiscountModal.client.id
+            ? { ...c, pro_discount_percent: editDiscountModal.discount }
+            : c
+        )
+      );
       toast.success('Desconto atualizado');
+      setEditDiscountModal(null);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
-      setSavingDiscount(null);
+      setSavingDiscount(false);
     }
   };
 
@@ -204,7 +212,7 @@ export function BoutiquePro() {
                 <tr>
                   <th className="px-4 py-3 font-medium text-gray-600">Nome</th>
                   <th className="px-4 py-3 font-medium text-gray-600">Email</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">Desconto pro (%)</th>
+                  <th className="px-4 py-3 font-medium text-gray-600">Desconto atual</th>
                   <th className="px-4 py-3 font-medium text-gray-600">Ação</th>
                 </tr>
               </thead>
@@ -214,21 +222,15 @@ export function BoutiquePro() {
                     <td className="px-4 py-3 font-medium text-primary-800">{client.full_name}</td>
                     <td className="px-4 py-3 text-gray-600">{client.email}</td>
                     <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={clientDiscounts[client.id] ?? 0}
-                        onChange={e => setClientDiscounts(d => ({ ...d, [client.id]: Number(e.target.value) }))}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-accent-500"
-                      />
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                        {client.pro_discount_percent ?? 0}%
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => handleSaveDiscount(client.id)}
-                        disabled={savingDiscount === client.id}
-                        className="px-3 py-1.5 bg-accent-500 text-white text-xs rounded-md hover:bg-accent-600 transition disabled:opacity-50">
-                        {savingDiscount === client.id ? 'A guardar…' : 'Guardar'}
+                        onClick={() => setEditDiscountModal({ client, discount: client.pro_discount_percent ?? 0 })}
+                        className="flex items-center gap-1 px-3 py-1.5 border border-accent-500 text-accent-600 text-xs rounded-md hover:bg-accent-50 transition">
+                        <Pencil className="h-3.5 w-3.5" /> Editar desconto
                       </button>
                     </td>
                   </tr>
@@ -292,6 +294,35 @@ export function BoutiquePro() {
                 {submitting ? 'A rejeitar…' : 'Confirmar rejeição'}
               </button>
               <button onClick={() => setRejectModal(null)} disabled={submitting}
+                className="flex-1 border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-50 transition">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit discount modal */}
+      {editDiscountModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-bold text-primary-800 mb-1">Editar desconto</h3>
+            <p className="text-sm text-gray-600 mb-4">{editDiscountModal.client.full_name}</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Desconto pro (%)</label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={editDiscountModal.discount}
+              onChange={e => setEditDiscountModal(prev => prev ? { ...prev, discount: Number(e.target.value) } : null)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500 mb-4"
+            />
+            <div className="flex gap-3">
+              <button onClick={handleSaveDiscount} disabled={savingDiscount}
+                className="flex-1 bg-accent-500 text-white py-2 rounded-lg font-medium hover:bg-accent-600 transition disabled:opacity-50">
+                {savingDiscount ? 'A guardar…' : 'Guardar'}
+              </button>
+              <button onClick={() => setEditDiscountModal(null)} disabled={savingDiscount}
                 className="flex-1 border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-50 transition">
                 Cancelar
               </button>
