@@ -93,15 +93,9 @@ export function BoutiquePro() {
     setSavingDiscount(true);
     try {
       await proRequestsService.updateProDiscount(editDiscountModal.client.id, editDiscountModal.discount);
-      setProClients(prev =>
-        prev.map(c =>
-          c.id === editDiscountModal.client.id
-            ? { ...c, pro_discount_percent: editDiscountModal.discount }
-            : c
-        )
-      );
       toast.success('Desconto atualizado');
       setEditDiscountModal(null);
+      refreshProClients();
     } catch (err: any) {
       toast.error(err.message);
     } finally {

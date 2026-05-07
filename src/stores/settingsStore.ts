@@ -94,12 +94,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ initialized: true });
     get().fetchSettings();
 
-    const channelId = 'public:settings';
+    const channelId = 'canape_module:settings_canape';
     const channel = supabase
       .channel(channelId)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'canape_module',
         table: 'settings_canape'
       }, (payload: any) => {
         console.log('⚡ [SettingsStore] Mudança Realtime detectada:', payload.eventType);
