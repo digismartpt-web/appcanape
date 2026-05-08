@@ -833,16 +833,19 @@ export const proRequestsService = {
     // TODO: REMOVE BEFORE PRODUCTION
     if (isTestUser()) return;
     // END TODO
+    console.log('[APPROVE] requestId:', requestId, 'userId:', userId, 'discount:', discountPercent);
     const now = new Date().toISOString();
     const { error: reqError } = await supabase
       .from(COLLECTIONS.PRO_REQUESTS)
       .update({ status: 'approved', reviewed_at: now })
       .eq('id', requestId);
+    console.log('[APPROVE] pro_request updated:', reqError ?? null);
     if (reqError) throw new Error(reqError.message);
     const { error: userError } = await supabase
       .from(COLLECTIONS.USERS)
       .update({ role: 'pro', pro_validated: true, pro_discount_percent: discountPercent, pro_validated_at: now })
       .eq('id', userId);
+    console.log('[APPROVE] user updated:', userError ?? null);
     if (userError) throw new Error(userError.message);
   },
 
