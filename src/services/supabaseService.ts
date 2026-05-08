@@ -398,7 +398,7 @@ export const ordersService = {
     // END TODO
     try {
       const { error } = await supabase.from(COLLECTIONS.ORDERS).update({
-        status: 'confirmed',
+        status: 'pago',
         payment_status: 'paid',
         updated_at: new Date().toISOString()
       }).eq('id', orderId);
