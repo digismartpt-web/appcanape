@@ -84,7 +84,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
           {allImages.length > 0 && (
             <div className="relative">
               <img src={allImages[imgIndex]} alt={product.name}
-                className="w-full h-64 object-cover rounded-lg" />
+                className="w-full h-64 object-contain rounded-lg bg-gray-50" />
               {allImages.length > 1 && (
                 <>
                   <button onClick={prevImg}
@@ -99,7 +99,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
                     {allImages.map((img, i) => (
                       <button key={i} onClick={() => setImgIndex(i)}
                         className={`w-12 h-12 rounded border-2 overflow-hidden transition-all ${i === imgIndex ? 'border-accent-500' : 'border-gray-200 opacity-60 hover:opacity-100'}`}>
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <img src={img} alt="" className="w-full h-full object-contain bg-gray-50" />
                       </button>
                     ))}
                   </div>
