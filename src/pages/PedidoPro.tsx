@@ -3,8 +3,20 @@ import { Link } from 'react-router-dom';
 import { Building2, CheckCircle, Clock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useProRequestsStore } from '../stores/proRequestsStore';
-import { supabase, supabaseAuth } from '../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
+
+// Client isolé — session em memória apenas (persistSession:false) para que
+// o signUp de novos utilizadores não dispare onAuthStateChange na app principal
+const proFormClient = (() => {
+  const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
+  const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
+  if (!url || !key || url === 'your_supabase_url_here') return null;
+  return createClient(url, key, {
+    db: { schema: 'canape_module' },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+})();
 
 const ACTIVITY_SECTORS = [
   'Construção civil',
@@ -138,24 +150,32 @@ export function PedidoPro() {
       let userId = user?.id;
       console.log('[PedidoPro] STEP 0 — user já ligado:', user ? `id=${user.id}` : 'não');
 
+      const address = `${form.morada.trim()}, ${form.codigo_postal.trim()} ${form.localidade.trim()}`;
+      const messageParts = [
+        `Nome do contacto: ${form.full_name.trim()}`,
+        `Volume de compras estimado: ${form.purchase_volume}`
+      ];
+      if (form.message.trim()) messageParts.push(`\nMensagem: ${form.message.trim()}`);
+      const message = messageParts.join('\n');
+
       if (!user) {
+        // Usa proFormClient (persistSession:false) para não disparar onAuthStateChange
+        if (!proFormClient) throw new Error('Configuração do servidor em falta. Tente novamente.');
+
         console.log('[PedidoPro] STEP 1 — a chamar signUp para:', form.email.trim());
-        const { data: signUpData, error: signUpError } = await supabaseAuth.auth.signUp({
+        const { data: signUpData, error: signUpError } = await proFormClient.auth.signUp({
           email: form.email.trim(),
           password: form.password,
-          options: {
-            data: { full_name: form.full_name.trim() }
-          }
+          options: { data: { full_name: form.full_name.trim() } }
         });
         console.log('[PedidoPro] STEP 1 resultado — user:', signUpData?.user?.id ?? null, '| identities:', signUpData?.user?.identities?.length ?? 'n/a', '| error:', signUpError?.message ?? null);
         if (signUpError) throw new Error(signUpError.message);
         userId = signUpData.user?.id;
         if (!userId) throw new Error('Erro ao criar conta. Tente novamente.');
 
-        // Create profile immediately so this user is recognised as a canape client on first login
         const now = new Date().toISOString();
         console.log('[PedidoPro] STEP 2 — a inserir perfil users_canape para userId:', userId);
-        const { error: profileError } = await supabase
+        const { error: profileError } = await proFormClient
           .from('users_canape')
           .insert({
             id: userId,
@@ -166,15 +186,31 @@ export function PedidoPro() {
             created_at: now
           });
         console.log('[PedidoPro] STEP 2 resultado — profileError:', profileError?.message ?? null);
+
+        console.log('[PedidoPro] STEP 3 — a submeter pro_requests_canape para userId:', userId);
+        const { error: proReqError } = await proFormClient
+          .from('pro_requests_canape')
+          .insert({
+            user_id: userId,
+            company_name: form.company_name.trim(),
+            nif: form.nif.trim(),
+            email: form.email.trim(),
+            phone: form.phone.trim(),
+            address,
+            activity_sector: form.activity_sector,
+            message,
+            status: 'pending',
+            auto_verification_attempted: false
+          });
+        console.log('[PedidoPro] STEP 3 resultado — proReqError:', proReqError?.message ?? null);
+        if (proReqError) throw new Error(proReqError.message);
+
+        console.log('[PedidoPro] STEP 3 OK — a definir submitted=true');
+        setSubmitted(true);
+        return;
       }
 
-      const address = `${form.morada.trim()}, ${form.codigo_postal.trim()} ${form.localidade.trim()}`;
-      const messageParts = [
-        `Nome do contacto: ${form.full_name.trim()}`,
-        `Volume de compras estimado: ${form.purchase_volume}`
-      ];
-      if (form.message.trim()) messageParts.push(`\nMensagem: ${form.message.trim()}`);
-
+      // Utilizador já ligado — usa o store (sessão autenticada disponível)
       console.log('[PedidoPro] STEP 3 — a submeter pro_requests_canape para userId:', userId);
       await submitRequest({
         user_id: userId,
@@ -184,7 +220,7 @@ export function PedidoPro() {
         phone: form.phone.trim(),
         address,
         activity_sector: form.activity_sector,
-        message: messageParts.join('\n')
+        message
       });
       console.log('[PedidoPro] STEP 3 OK — a definir submitted=true');
       setSubmitted(true);
