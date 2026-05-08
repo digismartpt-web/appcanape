@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Pencil, Trash2, Eye, EyeOff, Package, ChevronUp, ChevronDown, Upload, X, AlertTriangle } from 'lucide-react';
-import { productsService, productImagesService, storageService } from '../../services/supabaseService';
+import { useState, useEffect } from 'react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, Package, ChevronUp, ChevronDown, X, AlertTriangle } from 'lucide-react';
+import { productsService, productImagesService } from '../../services/supabaseService';
 import { usePizzasStore } from '../../stores/pizzasStore';
 import { usePizzariaCategories } from '../../hooks/usePizzariaCategories';
 import type { Product, ProductImage } from '../../types';
@@ -61,8 +61,8 @@ export function BoutiqueMenu() {
   const [newOption, setNewOption] = useState('');
 
   const [galleryImages, setGalleryImages] = useState<ProductImage[]>([]);
-  const [isUploadingImg, setIsUploadingImg] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [isAddingImg, setIsAddingImg] = useState(false);
 
   const [editingStockId, setEditingStockId] = useState<string | null>(null);
   const [stockInputVal, setStockInputVal] = useState(0);
@@ -123,6 +123,7 @@ export function BoutiqueMenu() {
     setEditingProduct(null);
     setForm(emptyForm);
     setGalleryImages([]);
+    setNewImageUrl('');
   };
 
   const addSize = () => setForm(f => ({ ...f, sizes: [...f.sizes, { code: `s_${Date.now()}`, label: '', price: 0 }] }));
@@ -146,22 +147,22 @@ export function BoutiqueMenu() {
   };
   const removeOption = (index: number) => setForm(f => ({ ...f, options: f.options.filter((_, i) => i !== index) }));
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editingProduct || !e.target.files?.length) return;
+  const handleAddImageByUrl = async () => {
+    if (!editingProduct) return;
+    const url = newImageUrl.trim();
+    if (!url) return;
     if (galleryImages.length >= 10) { alert('Máximo 10 fotos por produto.'); return; }
-    setIsUploadingImg(true);
+    setIsAddingImg(true);
     try {
-      const file = e.target.files[0];
-      const url = await storageService.uploadImage(file);
       const nextPos = galleryImages.length > 0 ? Math.max(...galleryImages.map(i => i.position)) + 1 : 0;
       await productImagesService.addProductImage(editingProduct.id, url, nextPos);
       const imgs = await productImagesService.getProductImages(editingProduct.id);
       setGalleryImages(imgs);
+      setNewImageUrl('');
     } catch (err: any) {
-      alert('Erro ao carregar foto: ' + err.message);
+      alert('Erro ao adicionar foto: ' + err.message);
     } finally {
-      setIsUploadingImg(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setIsAddingImg(false);
     }
   };
 
@@ -638,15 +639,20 @@ export function BoutiqueMenu() {
                     )}
 
                     {galleryImages.length < 10 && (
-                      <>
-                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                          onChange={handleImageUpload} />
-                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImg}
-                          className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:border-accent-400 hover:text-accent-600 transition disabled:opacity-50">
-                          <Upload className="h-4 w-4" />
-                          {isUploadingImg ? 'A carregar…' : 'Adicionar foto'}
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={newImageUrl}
+                          onChange={e => setNewImageUrl(e.target.value)}
+                          placeholder="https://… (URL da foto)"
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageByUrl(); } }}
+                          className="flex-1 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none"
+                        />
+                        <button type="button" onClick={handleAddImageByUrl} disabled={isAddingImg || !newImageUrl.trim()}
+                          className="px-4 py-2 bg-accent-100 text-accent-700 rounded-md text-sm hover:bg-accent-200 disabled:opacity-50">
+                          {isAddingImg ? 'A adicionar…' : 'Adicionar'}
                         </button>
-                      </>
+                      </div>
                     )}
                   </section>
                 )}

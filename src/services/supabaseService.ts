@@ -235,6 +235,19 @@ export const productImagesService = {
     return (data || []) as ProductImage[];
   },
 
+  async fetchProductImages(productId: string): Promise<ProductImage[]> {
+    return this.getProductImages(productId);
+  },
+
+  async getAllProductImages(): Promise<ProductImage[]> {
+    const { data, error } = await supabase
+      .from(COLLECTIONS.PRODUCT_IMAGES)
+      .select('*')
+      .order('position', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data || []) as ProductImage[];
+  },
+
   async addProductImage(productId: string, imageUrl: string, position: number = 0): Promise<string> {
     // TODO: REMOVE BEFORE PRODUCTION
     if (isTestUser()) return crypto.randomUUID();
