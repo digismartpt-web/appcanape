@@ -24,9 +24,12 @@ export function Menu() {
 
   const getAvailableCategories = () => {
     if (activeCategories.length > 0) {
-      return activeCategories.filter(cat => cat.active !== false).map(cat => cat.name.toLowerCase());
+      return activeCategories
+        .filter(cat => cat.active !== false)
+        .map(cat => ({ id: cat.id, name: cat.name }));
     }
-    return [...new Set(products.map(p => (p.category_id || 'Autres').toLowerCase()))];
+    const uniqueIds = [...new Set(products.map(p => p.category_id).filter(Boolean))];
+    return uniqueIds.map(id => ({ id: id!, name: id! }));
   };
   const availableCategories = getAvailableCategories();
 
@@ -34,7 +37,7 @@ export function Menu() {
     .filter(p => {
       if (p.track_stock && p.stock === 0) return false;
       if (selectedCategory === 'all') return true;
-      return (p.category_id || '').toLowerCase() === selectedCategory.toLowerCase();
+      return p.category_id === selectedCategory;
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
@@ -107,7 +110,7 @@ export function Menu() {
                     className="w-full pl-10 pr-8 py-3 text-base border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white touch-manipulation">
                     <option value="all">Todas as categorias</option>
                     {availableCategories.map(cat => (
-                      <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                      <option key={cat.id} value={cat.id}>{cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}</option>
                     ))}
                   </select>
                 </div>
@@ -118,11 +121,11 @@ export function Menu() {
                   Todos ({products.length})
                 </button>
                 {availableCategories.map(cat => {
-                  const count = products.filter(p => (p.category_id || '').toLowerCase() === cat.toLowerCase()).length;
+                  const count = products.filter(p => p.category_id === cat.id).length;
                   return (
-                    <button key={cat} onClick={() => setSelectedCategory(cat)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === cat ? 'bg-accent-500 text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200'}`}>
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)} ({count})
+                    <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === cat.id ? 'bg-accent-500 text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200'}`}>
+                      {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)} ({count})
                     </button>
                   );
                 })}
