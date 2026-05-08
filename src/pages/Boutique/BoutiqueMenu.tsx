@@ -473,6 +473,59 @@ export function BoutiqueMenu() {
                   )}
                 </section>
 
+                {/* Fotos adicionais */}
+                <section className="space-y-3">
+                  <h3 className="font-semibold text-gray-700 border-b pb-1">
+                    Fotos adicionais (máximo 10){editingProduct ? ` — ${galleryImages.length}/10` : ''}
+                  </h3>
+                  {!editingProduct ? (
+                    <p className="text-xs text-gray-400 italic">Guarde o produto primeiro para poder adicionar fotos adicionais à galeria.</p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-gray-500">Fotos exibidas no carrousel do produto (na loja).</p>
+                      {galleryImages.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                          {galleryImages.map((img, i) => (
+                            <div key={img.id} className="relative group">
+                              <img src={img.image_url} alt="" className="w-full h-20 object-cover rounded-lg border" />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center gap-1">
+                                <button type="button" onClick={() => moveImage(i, -1)} disabled={i === 0}
+                                  className="p-1 bg-white/80 rounded text-gray-700 hover:bg-white disabled:opacity-30">
+                                  <ChevronUp className="h-3 w-3" />
+                                </button>
+                                <button type="button" onClick={() => moveImage(i, 1)} disabled={i === galleryImages.length - 1}
+                                  className="p-1 bg-white/80 rounded text-gray-700 hover:bg-white disabled:opacity-30">
+                                  <ChevronDown className="h-3 w-3" />
+                                </button>
+                                <button type="button" onClick={() => deleteGalleryImage(img.id)}
+                                  className="p-1 bg-red-500 rounded text-white hover:bg-red-600">
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {galleryImages.length < 10 && (
+                        <div className="flex gap-2">
+                          <input
+                            type="url"
+                            value={newImageUrl}
+                            onChange={e => setNewImageUrl(e.target.value)}
+                            placeholder="https://… (URL da foto adicional)"
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageByUrl(); } }}
+                            className="flex-1 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none"
+                          />
+                          <button type="button" onClick={handleAddImageByUrl} disabled={isAddingImg || !newImageUrl.trim()}
+                            className="px-4 py-2 bg-accent-100 text-accent-700 rounded-md text-sm hover:bg-accent-200 disabled:opacity-50">
+                            {isAddingImg ? 'A adicionar…' : 'Adicionar foto'}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </section>
+
                 {/* Tamanhos e preços */}
                 <section className="space-y-3">
                   <h3 className="font-semibold text-gray-700 border-b pb-1">Tamanhos e preços *</h3>
@@ -606,56 +659,6 @@ export function BoutiqueMenu() {
                   )}
                 </section>
 
-                {/* Galeria — apenas para produtos existentes */}
-                {editingProduct && (
-                  <section className="space-y-3">
-                    <h3 className="font-semibold text-gray-700 border-b pb-1">
-                      Galeria de fotos ({galleryImages.length}/10)
-                    </h3>
-                    <p className="text-xs text-gray-500">Fotos adicionais exibidas no carrousel do produto.</p>
-
-                    {galleryImages.length > 0 && (
-                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                        {galleryImages.map((img, i) => (
-                          <div key={img.id} className="relative group">
-                            <img src={img.image_url} alt="" className="w-full h-20 object-cover rounded-lg border" />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center gap-1">
-                              <button type="button" onClick={() => moveImage(i, -1)} disabled={i === 0}
-                                className="p-1 bg-white/80 rounded text-gray-700 hover:bg-white disabled:opacity-30">
-                                <ChevronUp className="h-3 w-3" />
-                              </button>
-                              <button type="button" onClick={() => moveImage(i, 1)} disabled={i === galleryImages.length - 1}
-                                className="p-1 bg-white/80 rounded text-gray-700 hover:bg-white disabled:opacity-30">
-                                <ChevronDown className="h-3 w-3" />
-                              </button>
-                              <button type="button" onClick={() => deleteGalleryImage(img.id)}
-                                className="p-1 bg-red-500 rounded text-white hover:bg-red-600">
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {galleryImages.length < 10 && (
-                      <div className="flex gap-2">
-                        <input
-                          type="url"
-                          value={newImageUrl}
-                          onChange={e => setNewImageUrl(e.target.value)}
-                          placeholder="https://… (URL da foto)"
-                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageByUrl(); } }}
-                          className="flex-1 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none"
-                        />
-                        <button type="button" onClick={handleAddImageByUrl} disabled={isAddingImg || !newImageUrl.trim()}
-                          className="px-4 py-2 bg-accent-100 text-accent-700 rounded-md text-sm hover:bg-accent-200 disabled:opacity-50">
-                          {isAddingImg ? 'A adicionar…' : 'Adicionar'}
-                        </button>
-                      </div>
-                    )}
-                  </section>
-                )}
               </div>
 
               <div className="border-t px-6 py-4 flex justify-end gap-3 bg-gray-50 rounded-b-lg">
