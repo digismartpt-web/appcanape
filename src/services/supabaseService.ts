@@ -344,6 +344,19 @@ export const ordersService = {
       const { data: sessionData } = await supabaseAuth.auth.getSession();
       const accessToken = sessionData.session?.access_token || supabaseAnonKey;
 
+      // Transformer les items pour le format Stripe
+      const stripeItems = orderItems.map(item => ({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: item.product_name,
+            description: item.size_label || '',
+          },
+          unit_amount: Math.round(item.price * 100),
+        },
+        quantity: item.quantity || 1,
+      }));
+
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
@@ -353,7 +366,7 @@ export const ordersService = {
         },
         body: JSON.stringify({
           orderId,
-          items: orderItems,
+          items: stripeItems,
           customerEmail: userEmail,
           successUrl: `${window.location.origin}/payment-success`,
           cancelUrl: window.location.origin
