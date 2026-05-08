@@ -153,7 +153,7 @@ export function Menu() {
                           <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-primary-100 animate-pulse" />
                           {product.image_url && (
                             <img src={product.image_url} alt={product.name}
-                              className="w-full h-full object-cover relative z-10 transition-opacity duration-300 opacity-0"
+                              className="w-full h-full object-contain bg-gray-50 relative z-10 transition-opacity duration-300 opacity-0"
                               onLoad={(e) => {
                                 (e.currentTarget as HTMLImageElement).classList.remove('opacity-0');
                                 (e.currentTarget as HTMLImageElement).classList.add('opacity-100');
