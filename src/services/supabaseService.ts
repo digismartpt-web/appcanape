@@ -385,6 +385,7 @@ export const ordersService = {
       }
 
       const data = await response.json();
+      await this.confirmPayment(orderId);
       return data;
     } catch (error: any) {
       console.error('❌ Erreur appel Edge Function:', error);
