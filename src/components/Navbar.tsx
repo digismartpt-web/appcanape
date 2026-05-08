@@ -37,6 +37,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
 
   const canOrder = settings.is_open;
   const isPro = user?.pro_validated === true;
+  const isClientOrPro = user?.role === 'client' || user?.role === 'pro';
 
   return (
     <nav className="bg-primary-800 text-white sticky top-0 z-40 shadow-md">
@@ -80,7 +81,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                   <User className="h-5 w-5" />
                   {isPro && <ProBadge />}
                 </Link>
-                {user.role === 'client' && (
+                {isClientOrPro && (
                   <>
                     <Link to="/mes-commandes" className="hover:text-accent-400 transition flex items-center space-x-1" title="As minhas encomendas">
                       <ShoppingBag className="h-5 w-5" />
@@ -115,7 +116,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
 
           {/* Mobile Menu Button */}
           <div className="flex items-center space-x-2 md:hidden">
-            {user?.role === 'client' && <CartButton onClick={onCartClick} />}
+            {isClientOrPro && <CartButton onClick={onCartClick} />}
             <button
               className="md:hidden"
               onClick={() => setIsOpen(!isOpen)}
@@ -165,7 +166,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                   Perfil
                   {isPro && <ProBadge />}
                 </Link>
-                {user.role === 'client' && (
+                {isClientOrPro && (
                   <>
                     <Link
                       to="/mes-commandes"
