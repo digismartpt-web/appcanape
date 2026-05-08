@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Tag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Tag, AlertTriangle } from 'lucide-react';
 import { usePizzariaCategories } from '../../hooks/usePizzariaCategories';
+import { categoriesService } from '../../services/supabaseService';
 
 interface CategoryForm { name: string; description: string; active: boolean; }
 const emptyForm: CategoryForm = { name: '', description: '', active: true };
@@ -11,6 +12,8 @@ export function BoutiqueCategories() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<CategoryForm>(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ cat: any; productCount: number } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const openAdd = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (cat: any) => { setEditing(cat); setForm({ name: cat.name, description: cat.description || '', active: cat.active }); setShowModal(true); };
@@ -31,8 +34,31 @@ export function BoutiqueCategories() {
   };
 
   const handleDelete = async (cat: any) => {
-    if (!confirm(`Eliminar a categoria "${cat.name}"?`)) return;
-    try { await deleteCategory(cat.id); } catch (err: any) { alert('Erro: ' + err.message); }
+    try {
+      const count = await categoriesService.countProductsInCategory(cat.id);
+      if (count === 0) {
+        if (!confirm(`Eliminar a categoria "${cat.name}"?`)) return;
+        await deleteCategory(cat.id);
+      } else {
+        setDeleteModal({ cat, productCount: count });
+      }
+    } catch (err: any) {
+      alert('Erro: ' + err.message);
+    }
+  };
+
+  const handleDeleteWithDissociation = async () => {
+    if (!deleteModal) return;
+    setIsDeleting(true);
+    try {
+      await categoriesService.dissociateProductsFromCategory(deleteModal.cat.id);
+      await deleteCategory(deleteModal.cat.id);
+      setDeleteModal(null);
+    } catch (err: any) {
+      alert('Erro: ' + err.message);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -109,6 +135,40 @@ export function BoutiqueCategories() {
           </div>
         )}
       </div>
+
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Eliminar categoria</h3>
+                <p className="text-sm text-gray-600">
+                  A categoria <strong>"{deleteModal.cat.name}"</strong> tem{' '}
+                  <strong>{deleteModal.productCount} produto(s) associado(s)</strong>.
+                  O que pretende fazer?
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleDeleteWithDissociation}
+                disabled={isDeleting}
+                className="w-full px-4 py-2.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm font-medium disabled:opacity-50">
+                {isDeleting ? 'A processar…' : 'Remover categoria e desassociar produtos'}
+              </button>
+              <button
+                onClick={() => setDeleteModal(null)}
+                disabled={isDeleting}
+                className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition text-sm font-medium disabled:opacity-50">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

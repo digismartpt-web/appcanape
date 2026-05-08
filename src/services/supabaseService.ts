@@ -591,6 +591,24 @@ export const categoriesService = {
     return data || [];
   },
 
+  async countProductsInCategory(categoryId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from(COLLECTIONS.PRODUCTS)
+      .select('*', { count: 'exact', head: true })
+      .eq('category_id', categoryId);
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  },
+
+  async dissociateProductsFromCategory(categoryId: string): Promise<void> {
+    if (isTestUser()) return;
+    const { error } = await supabase
+      .from(COLLECTIONS.PRODUCTS)
+      .update({ category_id: null })
+      .eq('category_id', categoryId);
+    if (error) throw new Error(error.message);
+  },
+
   subscribeToCategories(callback: (categories: any[]) => void) {
     this.getAllCategories().then(callback);
     const channelId = `categories_all_${Date.now()}_${Math.random().toString(36).substring(7)}`;
