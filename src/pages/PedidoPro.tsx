@@ -136,8 +136,10 @@ export function PedidoPro() {
     setLoading(true);
     try {
       let userId = user?.id;
+      console.log('[PedidoPro] STEP 0 — user já ligado:', user ? `id=${user.id}` : 'não');
 
       if (!user) {
+        console.log('[PedidoPro] STEP 1 — a chamar signUp para:', form.email.trim());
         const { data: signUpData, error: signUpError } = await supabaseAuth.auth.signUp({
           email: form.email.trim(),
           password: form.password,
@@ -145,13 +147,15 @@ export function PedidoPro() {
             data: { full_name: form.full_name.trim() }
           }
         });
+        console.log('[PedidoPro] STEP 1 resultado — user:', signUpData?.user?.id ?? null, '| identities:', signUpData?.user?.identities?.length ?? 'n/a', '| error:', signUpError?.message ?? null);
         if (signUpError) throw new Error(signUpError.message);
         userId = signUpData.user?.id;
         if (!userId) throw new Error('Erro ao criar conta. Tente novamente.');
 
         // Create profile immediately so this user is recognised as a canape client on first login
         const now = new Date().toISOString();
-        await supabase
+        console.log('[PedidoPro] STEP 2 — a inserir perfil users_canape para userId:', userId);
+        const { error: profileError } = await supabase
           .from('users_canape')
           .insert({
             id: userId,
@@ -161,6 +165,7 @@ export function PedidoPro() {
             phone: form.phone.trim(),
             created_at: now
           });
+        console.log('[PedidoPro] STEP 2 resultado — profileError:', profileError?.message ?? null);
       }
 
       const address = `${form.morada.trim()}, ${form.codigo_postal.trim()} ${form.localidade.trim()}`;
@@ -170,6 +175,7 @@ export function PedidoPro() {
       ];
       if (form.message.trim()) messageParts.push(`\nMensagem: ${form.message.trim()}`);
 
+      console.log('[PedidoPro] STEP 3 — a submeter pro_requests_canape para userId:', userId);
       await submitRequest({
         user_id: userId,
         company_name: form.company_name.trim(),
@@ -180,8 +186,10 @@ export function PedidoPro() {
         activity_sector: form.activity_sector,
         message: messageParts.join('\n')
       });
+      console.log('[PedidoPro] STEP 3 OK — a definir submitted=true');
       setSubmitted(true);
     } catch (err: any) {
+      console.error('[PedidoPro] ERRO capturado:', err.message);
       toast.error(err.message || 'Erro ao enviar pedido. Tente novamente.');
     } finally {
       setLoading(false);
