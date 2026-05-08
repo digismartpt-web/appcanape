@@ -368,7 +368,7 @@ export const ordersService = {
           orderId,
           items: stripeItems,
           customerEmail: userEmail,
-          successUrl: `${window.location.origin}/payment-success`,
+          successUrl: `${window.location.origin}/payment-success?order_id=${orderId}`,
           cancelUrl: window.location.origin
         })
       });
@@ -385,7 +385,6 @@ export const ordersService = {
       }
 
       const data = await response.json();
-      await this.confirmPayment(orderId);
       return data;
     } catch (error: any) {
       console.error('❌ Erreur appel Edge Function:', error);
