@@ -167,7 +167,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <div className="min-h-screen h-full bg-primary-50 flex flex-col">
+      <div className="min-h-screen h-full bg-[#111111] flex flex-col">
         <Toaster position="top-center" />
         <Navbar onCartClick={() => setIsCartOpen(true)} />
         <MainContent />

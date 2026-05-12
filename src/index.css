@@ -6,6 +6,9 @@
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    margin: 0;
+    padding: 0;
+    background-color: #111111;
   }
 
   body {
@@ -13,6 +16,8 @@
     -moz-osx-font-smoothing: grayscale;
     background-color: #111111;
     color: #FFFFFF;
+    margin: 0;
+    padding: 0;
   }
 
   /* Améliorer les interactions tactiles */
