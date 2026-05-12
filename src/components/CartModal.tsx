@@ -154,22 +154,22 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white rounded-t-lg sm:rounded-lg max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-[#1a1a1a] rounded-t-lg sm:rounded-lg max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col border border-[#D4AF37]/20">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b flex-shrink-0">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[#D4AF37]/20 flex-shrink-0">
           <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <ShoppingCart className="w-6 h-6" /> O Meu Carrinho
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Fechar">
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors" title="Fechar">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-4 sm:p-6">
           {items.length === 0 && !isSubmitting ? (
-            <div className="text-center py-8 text-gray-500">
-              <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">O seu carrinho está vazio</p>
+            <div className="text-center py-8 text-gray-400">
+              <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-40" />
+              <p className="text-lg text-white">O seu carrinho está vazio</p>
               <p className="text-sm">Descubra os nossos produtos!</p>
             </div>
           ) : (
@@ -190,37 +190,37 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
               )}
 
               {/* Type de livraison */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-lg mb-4">Modo de entrega</h3>
+              <div className="mb-6 p-4 bg-[#222222] rounded-lg">
+                <h3 className="font-semibold text-lg mb-4 text-white">Modo de entrega</h3>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <button onClick={() => setLocalDeliveryType('pickup')}
-                    className={`p-4 rounded-lg border-2 transition-all ${localDeliveryType === 'pickup' ? 'border-accent-600 bg-accent-50 text-accent-700' : 'border-gray-300 hover:border-gray-400'}`}>
+                    className={`p-4 rounded-lg border-2 transition-all ${localDeliveryType === 'pickup' ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-600 hover:border-[#D4AF37]/50 text-gray-300'}`}>
                     <Store className="w-6 h-6 mx-auto mb-2" />
                     <p className="font-medium">Recolha</p>
-                    <p className="text-xs text-gray-600 mt-1">Na loja</p>
+                    <p className="text-xs text-gray-400 mt-1">Na loja</p>
                   </button>
                   <button onClick={() => setLocalDeliveryType('delivery')}
-                    className={`p-4 rounded-lg border-2 transition-all ${localDeliveryType === 'delivery' ? 'border-accent-600 bg-accent-50 text-accent-700' : 'border-gray-300 hover:border-gray-400'}`}>
+                    className={`p-4 rounded-lg border-2 transition-all ${localDeliveryType === 'delivery' ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-600 hover:border-[#D4AF37]/50 text-gray-300'}`}>
                     <Truck className="w-6 h-6 mx-auto mb-2" />
                     <p className="font-medium">Entrega</p>
-                    <p className="text-xs text-gray-600 mt-1">Ao domicílio</p>
+                    <p className="text-xs text-gray-400 mt-1">Ao domicílio</p>
                   </button>
                 </div>
 
                 {/* Délai livraison */}
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                <div className="p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg text-sm text-blue-300">
                   🚚 <strong>Entrega estimada em {settings?.estimated_delivery_days ?? 14} dias úteis</strong> após confirmação da encomenda.
                 </div>
 
                 {localDeliveryType === 'delivery' && (
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Morada de entrega</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Morada de entrega</label>
                     <input
                       type="text"
                       value={localDeliveryAddress}
                       onChange={(e) => setLocalDeliveryAddress(e.target.value)}
                       placeholder="Número, rua, código postal, localidade…"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
+                      className="w-full px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
                     />
                   </div>
                 )}
@@ -229,7 +229,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
               {/* Liste articles */}
               <div className="space-y-4">
                 {items.map(item => (
-                  <div key={item.id} className="flex flex-col sm:flex-row items-start gap-4 p-4 border rounded-lg">
+                  <div key={item.id} className="flex flex-col sm:flex-row items-start gap-4 p-4 border border-[#D4AF37]/20 rounded-lg bg-[#222222]">
                     {item.product.image_url && (
                       <img src={item.product.image_url} alt={item.product.name}
                         className="w-full sm:w-16 h-32 sm:h-16 object-cover rounded-lg shrink-0" />
@@ -238,7 +238,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                       <div className="flex justify-between items-start gap-2">
                         <div>
                           <h3 className="font-bold text-lg truncate">{item.product.name}</h3>
-                          <p className="text-gray-500 text-sm">
+                          <p className="text-gray-400 text-sm">
                             {item.sizeLabel}
                             {item.selectedOption && ` • ${item.selectedOption}`}
                           </p>
@@ -257,7 +257,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-3 bg-gray-100 rounded-full px-2 py-1">
+                        <div className="flex items-center gap-3 bg-[#333333] rounded-full px-2 py-1">
                           <button onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             className="p-1 hover:bg-white rounded-full transition-shadow" title="Remover 1">
                             <Minus className="w-4 h-4" />
@@ -281,9 +281,9 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {items.length > 0 && (
-          <div className="border-t p-4 sm:p-6 flex-shrink-0 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+          <div className="border-t border-[#D4AF37]/20 p-4 sm:p-6 flex-shrink-0 bg-[#1a1a1a] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.4)]">
             <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-300">
                 <span>Subtotal:</span>
                 <span>{items.reduce((s, i) => s + i.price, 0).toFixed(2)}€</span>
               </div>
@@ -302,12 +302,12 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                 </div>
               )}
               {localDeliveryType === 'delivery' && settings?.delivery_fee && (
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-300">
                   <span>Custos de entrega:</span>
                   <span>{settings.delivery_fee.toFixed(2)}€</span>
                 </div>
               )}
-              <div className="flex justify-between text-2xl font-black text-primary-900 pt-2 border-t">
+              <div className="flex justify-between text-2xl font-black text-white pt-2 border-t border-[#D4AF37]/20">
                 <span>Total:</span>
                 <span>{((isProUser ? getProTotal() : getTotal()) + (localDeliveryType === 'delivery' && settings?.delivery_fee ? settings.delivery_fee : 0)).toFixed(2)}€</span>
               </div>
@@ -316,7 +316,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
             <button
               onClick={handleCheckout}
               disabled={!isStoreOpen || isSubmitting || items.length === 0 || (localDeliveryType === 'delivery' && !localDeliveryAddress.trim())}
-              className="w-full bg-accent-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-accent-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-[#D4AF37] text-black py-4 rounded-xl font-bold text-lg hover:bg-[#B8941A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />A processar…</>

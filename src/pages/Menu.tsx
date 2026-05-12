@@ -70,7 +70,7 @@ export function Menu() {
   };
 
   return (
-    <div className="min-h-screen bg-primary-50">
+    <div className="min-h-screen bg-[#111111]">
       <div className="container mx-auto px-4 py-8">
         {loadingState && products.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 min-h-[60vh]">
@@ -94,20 +94,20 @@ export function Menu() {
                     className="h-16 sm:h-20 md:h-24 w-auto object-contain max-w-xs" />
                 </div>
               )}
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-800 mb-2 px-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 px-4">
                 {settings.name || 'O Nosso Catálogo'}
               </h1>
               <div className="sm:hidden"><BrandingFooter isStatic={true} /></div>
             </div>
 
             {/* Filtres */}
-            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8">
+            <div className="bg-[#1a1a1a] rounded-lg shadow-md p-4 sm:p-6 mb-8 border border-[#D4AF37]/20">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative w-full">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-400 h-5 w-5" />
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#D4AF37] h-5 w-5" />
                   <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
                     aria-label="Filtrar por categoria"
-                    className="w-full pl-10 pr-8 py-3 text-base border border-primary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white touch-manipulation">
+                    className="w-full pl-10 pr-8 py-3 text-base border border-[#D4AF37]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#D4AF37] bg-[#1a1a1a] text-white touch-manipulation">
                     <option value="all">Todas as categorias</option>
                     {availableCategories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}</option>
@@ -117,14 +117,14 @@ export function Menu() {
               </div>
               <div className="hidden sm:flex flex-wrap gap-2 mt-4">
                 <button onClick={() => setSelectedCategory('all')}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === 'all' ? 'bg-accent-500 text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200'}`}>
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === 'all' ? 'bg-[#D4AF37] text-black font-semibold' : 'bg-[#222222] text-gray-300 hover:bg-[#333333] border border-[#D4AF37]/20'}`}>
                   Todos ({products.length})
                 </button>
                 {availableCategories.map(cat => {
                   const count = products.filter(p => p.category_id === cat.id).length;
                   return (
                     <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === cat.id ? 'bg-accent-500 text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200'}`}>
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === cat.id ? 'bg-[#D4AF37] text-black font-semibold' : 'bg-[#222222] text-gray-300 hover:bg-[#333333] border border-[#D4AF37]/20'}`}>
                       {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)} ({count})
                     </button>
                   );
@@ -134,9 +134,9 @@ export function Menu() {
 
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12">
-                <Package className="h-16 w-16 text-primary-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-primary-800 mb-2">Nenhum produto encontrado</h3>
-                <p className="text-primary-600">Tente modificar os seus filtros</p>
+                <Package className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">Nenhum produto encontrado</h3>
+                <p className="text-gray-400">Tente modificar os seus filtros</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -147,10 +147,10 @@ export function Menu() {
                     const displayPrice = getDisplayPrice(product);
                     return (
                       <div key={product.id}
-                        className={`bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer touch-manipulation ${isOutOfStock ? 'opacity-60' : ''}`}
+                        className={`bg-[#1a1a1a] rounded-lg border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 hover:shadow-[0_0_20px_rgba(212,175,55,0.15)] overflow-hidden transition-all cursor-pointer touch-manipulation ${isOutOfStock ? 'opacity-60' : ''}`}
                         onClick={() => !isOutOfStock && setSelectedProduct(product)}>
-                        <div className="w-full h-64 sm:h-72 bg-primary-100 flex items-center justify-center relative overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-primary-100 animate-pulse" />
+                        <div className="w-full h-64 sm:h-72 bg-[#222222] flex items-center justify-center relative overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#222222] animate-pulse" />
                           {product.image_url && (
                             <img src={product.image_url} alt={product.name}
                               className="w-full h-full object-cover relative z-10 transition-opacity duration-300 opacity-0"
@@ -176,14 +176,14 @@ export function Menu() {
                           )}
                         </div>
                         <div className="p-4 sm:p-6">
-                          <h3 className="text-lg sm:text-xl font-semibold text-primary-800 mb-1">{product.name}</h3>
+                          <h3 className="text-lg sm:text-xl font-semibold text-white mb-1">{product.name}</h3>
                           {product.description && (
-                            <p className="text-primary-600 text-sm mb-3 line-clamp-2">{product.description}</p>
+                            <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
                           )}
                           {product.features.length > 0 && (
                             <div className="flex flex-wrap gap-1 mb-3">
                               {product.features.slice(0, 3).map((f, i) => (
-                                <span key={i} className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">{f}</span>
+                                <span key={i} className="text-xs bg-[#222222] text-[#D4AF37] border border-[#D4AF37]/20 px-2 py-0.5 rounded-full">{f}</span>
                               ))}
                             </div>
                           )}
@@ -191,7 +191,7 @@ export function Menu() {
                             <div className="text-sm">
                               {displayPrice ? (
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-lg sm:text-xl font-bold text-accent-600">{displayPrice}</span>
+                                  <span className="text-lg sm:text-xl font-bold text-[#D4AF37]">{displayPrice}</span>
                                   {isProUser && (
                                     <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full w-fit">Preço Pro</span>
                                   )}
@@ -202,7 +202,7 @@ export function Menu() {
                             </div>
                             <button
                               disabled={isOutOfStock}
-                              className="w-auto bg-accent-500 text-white px-4 py-2.5 rounded-md hover:bg-accent-600 transition text-sm font-medium touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed">
+                              className="w-auto bg-[#D4AF37] text-black px-4 py-2.5 rounded-md hover:bg-[#B8941A] transition text-sm font-bold touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed">
                               {isOutOfStock ? 'Indisponível' : 'Ver'}
                             </button>
                           </div>
@@ -214,23 +214,23 @@ export function Menu() {
 
                 {/* Pagination */}
                 {filteredProducts.length > productsPerPage && (
-                  <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                  <div className="bg-[#1a1a1a] rounded-lg border border-[#D4AF37]/20 p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <p className="text-xs sm:text-sm text-primary-600">
+                      <p className="text-xs sm:text-sm text-gray-400">
                         A mostrar {indexOfFirst + 1}–{Math.min(indexOfLast, filteredProducts.length)} de {filteredProducts.length} produtos
                       </p>
                       <div className="flex items-center space-x-2">
                         <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
-                          className="px-4 py-2 text-sm border border-primary-300 rounded-md hover:bg-primary-50 disabled:opacity-50 touch-manipulation">← Anterior</button>
+                          className="px-4 py-2 text-sm border border-[#D4AF37]/30 rounded-md hover:bg-[#222222] text-gray-300 disabled:opacity-50 touch-manipulation">← Anterior</button>
                         <div className="hidden sm:flex items-center space-x-1">
                           {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
                             <button key={n} onClick={() => setCurrentPage(n)}
-                              className={`px-3 py-2 text-sm rounded-md ${currentPage === n ? 'bg-accent-500 text-white' : 'border border-primary-300 hover:bg-primary-50'}`}>{n}</button>
+                              className={`px-3 py-2 text-sm rounded-md ${currentPage === n ? 'bg-[#D4AF37] text-black font-bold' : 'border border-[#D4AF37]/30 text-gray-300 hover:bg-[#222222]'}`}>{n}</button>
                           ))}
                         </div>
-                        <div className="sm:hidden px-3 py-2 text-sm font-medium text-primary-700">{currentPage}/{totalPages}</div>
+                        <div className="sm:hidden px-3 py-2 text-sm font-medium text-gray-300">{currentPage}/{totalPages}</div>
                         <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}
-                          className="px-4 py-2 text-sm border border-primary-300 rounded-md hover:bg-primary-50 disabled:opacity-50 touch-manipulation">Seguinte →</button>
+                          className="px-4 py-2 text-sm border border-[#D4AF37]/30 rounded-md hover:bg-[#222222] text-gray-300 disabled:opacity-50 touch-manipulation">Seguinte →</button>
                       </div>
                     </div>
                   </div>

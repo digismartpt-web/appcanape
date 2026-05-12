@@ -261,44 +261,44 @@ export function BoutiqueMenu() {
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
-      <div className="bg-white rounded-lg shadow-md p-6 flex justify-between items-center">
+      <div className="bg-[#1a1a1a] rounded-lg shadow-md p-6 flex justify-between items-center border border-[#D4AF37]/20">
         <div>
-          <h1 className="text-3xl font-bold text-primary-800">Catálogo de produtos</h1>
-          <p className="text-primary-600 mt-1">{products.length} produto(s) no total</p>
+          <h1 className="text-3xl font-bold text-white">Catálogo de produtos</h1>
+          <p className="text-gray-400 mt-1">{products.length} produto(s) no total</p>
         </div>
         <button onClick={openAdd}
-          className="flex items-center gap-2 bg-accent-500 text-white px-4 py-2 rounded-md hover:bg-accent-600 transition">
+          className="flex items-center gap-2 bg-[#D4AF37] text-black px-4 py-2 rounded-md hover:bg-[#B8941A] transition font-semibold">
           <Plus className="h-5 w-5" /> Adicionar produto
         </button>
       </div>
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Total</p>
-          <p className="text-2xl font-bold text-accent-600">{filtered.length}</p>
+        <div className="bg-[#1a1a1a] rounded-lg shadow-md p-4 border border-[#D4AF37]/20">
+          <p className="text-sm text-gray-400">Total</p>
+          <p className="text-2xl font-bold text-[#D4AF37]">{filtered.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Disponíveis</p>
-          <p className="text-2xl font-bold text-green-600">{filtered.filter(p => p.available).length}</p>
+        <div className="bg-[#1a1a1a] rounded-lg shadow-md p-4 border border-[#D4AF37]/20">
+          <p className="text-sm text-gray-400">Disponíveis</p>
+          <p className="text-2xl font-bold text-green-400">{filtered.filter(p => p.available).length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Em rutura de stock</p>
-          <p className="text-2xl font-bold text-red-600">{filtered.filter(p => p.track_stock && p.stock === 0).length}</p>
+        <div className="bg-[#1a1a1a] rounded-lg shadow-md p-4 border border-[#D4AF37]/20">
+          <p className="text-sm text-gray-400">Em rutura de stock</p>
+          <p className="text-2xl font-bold text-red-400">{filtered.filter(p => p.track_stock && p.stock === 0).length}</p>
         </div>
       </div>
 
       {/* Filtro por categoria */}
-      <div className="bg-white rounded-lg shadow-md p-4 flex flex-wrap gap-2">
+      <div className="bg-[#1a1a1a] rounded-lg shadow-md p-4 flex flex-wrap gap-2 border border-[#D4AF37]/20">
         <button onClick={() => setSelectedCategory('all')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === 'all' ? 'bg-accent-500 text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200'}`}>
+          className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === 'all' ? 'bg-[#D4AF37] text-black font-semibold' : 'bg-[#222222] text-gray-300 hover:bg-[#333333] border border-[#D4AF37]/20'}`}>
           Todos ({products.length})
         </button>
         {availableCategories.map(cat => {
           const count = products.filter(p => p.category_id === cat.id).length;
           return (
             <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === cat.id ? 'bg-accent-500 text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200'}`}>
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === cat.id ? 'bg-[#D4AF37] text-black font-semibold' : 'bg-[#222222] text-gray-300 hover:bg-[#333333] border border-[#D4AF37]/20'}`}>
               {cat.name} ({count})
             </button>
           );
@@ -306,39 +306,39 @@ export function BoutiqueMenu() {
       </div>
 
       {/* Tabela de produtos */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden border border-[#D4AF37]/20">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-primary-50">
+            <thead className="bg-[#222222]">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-primary-800">Produto</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-primary-800">Categoria</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-primary-800">Tamanhos / Preço</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-primary-800">Stock</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-primary-800">Estado</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-primary-800">Ações</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#D4AF37]">Produto</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#D4AF37]">Categoria</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#D4AF37]">Tamanhos / Preço</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#D4AF37]">Stock</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#D4AF37]">Estado</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#D4AF37]">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-primary-100">
+            <tbody className="divide-y divide-[#D4AF37]/10">
               {current.map(product => {
                 const isLowStock = product.track_stock && product.stock > 0 && product.stock <= product.stock_alert_threshold;
                 const isOutOfStock = product.track_stock && product.stock === 0;
                 return (
-                  <tr key={product.id} className="hover:bg-primary-50">
+                  <tr key={product.id} className="hover:bg-[#222222]">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {product.image_url
                           ? <img src={product.image_url} alt={product.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-                          : <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0"><Package className="h-5 w-5 text-primary-400" /></div>
+                          : <div className="w-12 h-12 rounded-lg bg-[#222222] border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0"><Package className="h-5 w-5 text-[#D4AF37]" /></div>
                         }
                         <div>
-                          <p className="font-medium text-primary-800 text-sm">{product.name}</p>
-                          {product.description && <p className="text-xs text-primary-500 max-w-xs truncate">{product.description}</p>}
+                          <p className="font-medium text-white text-sm">{product.name}</p>
+                          {product.description && <p className="text-xs text-gray-400 max-w-xs truncate">{product.description}</p>}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-primary-600 capitalize">{product.category_id || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-primary-600">
+                    <td className="px-4 py-3 text-sm text-gray-400 capitalize">{product.category_id || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-400">
                       {product.sizes.length > 0
                         ? product.sizes.map(s => <div key={s.code}>{s.label}: {s.price.toFixed(2)}€</div>)
                         : <span className="text-gray-400">—</span>}
@@ -392,22 +392,22 @@ export function BoutiqueMenu() {
         </div>
 
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
+          <div className="px-4 py-3 border-t border-[#D4AF37]/10 bg-[#111111] flex items-center justify-between">
+            <p className="text-sm text-gray-400">
               {(currentPage - 1) * perPage + 1}–{Math.min(currentPage * perPage, filtered.length)} de {filtered.length}
             </p>
             <div className="flex gap-2">
               <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50">← Anterior</button>
+                className="px-3 py-1 text-sm border border-[#D4AF37]/30 rounded text-gray-300 hover:bg-[#222222] disabled:opacity-50">← Anterior</button>
               <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50">Seguinte →</button>
+                className="px-3 py-1 text-sm border border-[#D4AF37]/30 rounded text-gray-300 hover:bg-[#222222] disabled:opacity-50">Seguinte →</button>
             </div>
           </div>
         )}
 
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-primary-500">
-            <Package className="h-12 w-12 mx-auto mb-3 opacity-40" />
+          <div className="text-center py-12 text-gray-500">
+            <Package className="h-12 w-12 mx-auto mb-3 opacity-40 text-[#D4AF37]" />
             <p>Nenhum produto nesta categoria.</p>
           </div>
         )}
@@ -416,13 +416,13 @@ export function BoutiqueMenu() {
       {/* Modal Adicionar / Editar */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-4">
+          <div className="bg-[#1a1a1a] rounded-lg shadow-xl w-full max-w-2xl my-4 border border-[#D4AF37]/20">
             <form onSubmit={handleSubmit}>
-              <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center rounded-t-lg z-10">
-                <h2 className="text-xl font-bold text-primary-800">
+              <div className="sticky top-0 bg-[#1a1a1a] border-b border-[#D4AF37]/20 px-6 py-4 flex justify-between items-center rounded-t-lg z-10">
+                <h2 className="text-xl font-bold text-white">
                   {editingProduct ? 'Editar produto' : 'Adicionar produto'}
                 </h2>
-                <button type="button" onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1">
+                <button type="button" onClick={closeModal} className="text-gray-400 hover:text-white p-1">
                   <X className="h-6 w-6" />
                 </button>
               </div>
@@ -430,23 +430,23 @@ export function BoutiqueMenu() {
               <div className="p-6 space-y-6">
                 {/* Informações gerais */}
                 <section className="space-y-4">
-                  <h3 className="font-semibold text-gray-700 border-b pb-1">Informações gerais</h3>
+                  <h3 className="font-semibold text-[#D4AF37] border-b border-[#D4AF37]/20 pb-1">Informações gerais</h3>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Nome *</label>
                     <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                       required placeholder="Ex: Sofá 3 lugares Elisa"
-                      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                      className="w-full px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-white placeholder-gray-500 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
                     <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                       rows={3} placeholder="Descrição do produto…"
-                      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                      className="w-full px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-white placeholder-gray-500 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Categoria</label>
                     <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-accent-500 focus:outline-none">
+                      className="w-full px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-white placeholder-gray-500 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none">
                       <option value="">— Selecionar —</option>
                       {activeCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                     </select>
@@ -454,19 +454,19 @@ export function BoutiqueMenu() {
                   <div className="flex items-center gap-2">
                     <input type="checkbox" id="available" checked={form.available}
                       onChange={e => setForm(f => ({ ...f, available: e.target.checked }))}
-                      className="rounded border-gray-300 text-accent-500 focus:ring-accent-500" />
-                    <label htmlFor="available" className="text-sm text-gray-700">Produto disponível para venda</label>
+                      className="rounded border-[#D4AF37]/40 text-[#D4AF37] focus:ring-[#D4AF37] bg-[#222222]" />
+                    <label htmlFor="available" className="text-sm text-gray-300">Produto disponível para venda</label>
                   </div>
                 </section>
 
                 {/* Foto principal */}
                 <section className="space-y-3">
-                  <h3 className="font-semibold text-gray-700 border-b pb-1">Foto principal</h3>
+                  <h3 className="font-semibold text-[#D4AF37] border-b border-[#D4AF37]/20 pb-1">Foto principal</h3>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">URL da imagem</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">URL da imagem</label>
                     <input type="url" value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
                       placeholder="https://…"
-                      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                      className="w-full px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-white placeholder-gray-500 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                   </div>
                   {form.image_url && (
                     <img src={form.image_url} alt="Pré-visualização" className="w-32 h-32 object-cover rounded-lg border" />
@@ -475,7 +475,7 @@ export function BoutiqueMenu() {
 
                 {/* Fotos adicionais */}
                 <section className="space-y-3">
-                  <h3 className="font-semibold text-gray-700 border-b pb-1">
+                  <h3 className="font-semibold text-[#D4AF37] border-b border-[#D4AF37]/20 pb-1">
                     Fotos adicionais (máximo 10){editingProduct ? ` — ${galleryImages.length}/10` : ''}
                   </h3>
                   {!editingProduct ? (
@@ -514,10 +514,10 @@ export function BoutiqueMenu() {
                             onChange={e => setNewImageUrl(e.target.value)}
                             placeholder="https://… (URL da foto adicional)"
                             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageByUrl(); } }}
-                            className="flex-1 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none"
+                            className="flex-1 px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none"
                           />
                           <button type="button" onClick={handleAddImageByUrl} disabled={isAddingImg || !newImageUrl.trim()}
-                            className="px-4 py-2 bg-accent-100 text-accent-700 rounded-md text-sm hover:bg-accent-200 disabled:opacity-50">
+                            className="px-4 py-2 bg-[#D4AF37]/20 text-[#D4AF37] rounded-md text-sm hover:bg-[#D4AF37]/30 disabled:opacity-50">
                             {isAddingImg ? 'A adicionar…' : 'Adicionar foto'}
                           </button>
                         </div>
@@ -528,19 +528,19 @@ export function BoutiqueMenu() {
 
                 {/* Tamanhos e preços */}
                 <section className="space-y-3">
-                  <h3 className="font-semibold text-gray-700 border-b pb-1">Tamanhos e preços *</h3>
+                  <h3 className="font-semibold text-[#D4AF37] border-b border-[#D4AF37]/20 pb-1">Tamanhos e preços *</h3>
                   <p className="text-xs text-gray-500">Adicione pelo menos um tamanho com preço (ex: "1 lugar", "2 lugares", "3 lugares").</p>
                   <div className="space-y-2">
                     {form.sizes.map((size, i) => (
                       <div key={i} className="flex gap-2 items-center">
                         <input type="text" placeholder="Nome (ex: 2 lugares)" value={size.label}
                           onChange={e => updateSize(i, 'label', e.target.value)}
-                          className="flex-1 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                          className="flex-1 px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                         <div className="relative">
                           <input type="number" placeholder="Preço" value={size.price || ''}
                             onChange={e => updateSize(i, 'price', Number(e.target.value))}
                             min="0" step="0.01"
-                            className="w-28 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                            className="w-28 px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-sm text-white focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
                         </div>
                         {form.sizes.length > 1 && (
@@ -553,19 +553,19 @@ export function BoutiqueMenu() {
                     ))}
                   </div>
                   <button type="button" onClick={addSize}
-                    className="text-sm text-accent-600 hover:text-accent-700 font-medium flex items-center gap-1">
+                    className="text-sm text-[#D4AF37] hover:text-[#E5CA40] font-medium flex items-center gap-1">
                     <Plus className="h-4 w-4" /> Adicionar tamanho
                   </button>
                 </section>
 
                 {/* Características */}
                 <section className="space-y-3">
-                  <h3 className="font-semibold text-gray-700 border-b pb-1">Características</h3>
+                  <h3 className="font-semibold text-[#D4AF37] border-b border-[#D4AF37]/20 pb-1">Características</h3>
                   <div className="flex flex-wrap gap-2">
                     {form.features.map((f, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-3 py-1 bg-accent-100 text-accent-800 rounded-full text-sm">
+                      <span key={i} className="inline-flex items-center gap-1 px-3 py-1 bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20 rounded-full text-sm">
                         {f}
-                        <button type="button" onClick={() => removeFeature(i)} className="text-accent-600 hover:text-accent-900 ml-0.5">×</button>
+                        <button type="button" onClick={() => removeFeature(i)} className="text-[#D4AF37] hover:text-white ml-0.5">×</button>
                       </span>
                     ))}
                   </div>
@@ -573,9 +573,9 @@ export function BoutiqueMenu() {
                     <input type="text" value={newFeature} onChange={e => setNewFeature(e.target.value)}
                       placeholder="Ex: Tecido lavável…"
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFeature(); } }}
-                      className="flex-1 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                      className="flex-1 px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                     <button type="button" onClick={addFeature}
-                      className="px-3 py-2 bg-accent-100 text-accent-700 rounded-md text-sm hover:bg-accent-200">Adicionar</button>
+                      className="px-3 py-2 bg-[#D4AF37]/20 text-[#D4AF37] rounded-md text-sm hover:bg-[#D4AF37]/30">Adicionar</button>
                   </div>
                 </section>
 
@@ -585,7 +585,7 @@ export function BoutiqueMenu() {
                     <h3 className="font-semibold text-gray-700">Opções (cor / material)</h3>
                     <input type="checkbox" id="has_options" checked={form.has_options}
                       onChange={e => setForm(f => ({ ...f, has_options: e.target.checked }))}
-                      className="rounded border-gray-300 text-accent-500 focus:ring-accent-500" />
+                      className="rounded border-[#D4AF37]/40 text-[#D4AF37] focus:ring-[#D4AF37] bg-[#222222]" />
                     <label htmlFor="has_options" className="text-sm text-gray-500">Ativar</label>
                   </div>
                   {form.has_options && (
@@ -602,7 +602,7 @@ export function BoutiqueMenu() {
                         <input type="text" value={newOption} onChange={e => setNewOption(e.target.value)}
                           placeholder="Ex: Cinzento antracite…"
                           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOption(); } }}
-                          className="flex-1 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                          className="flex-1 px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                         <button type="button" onClick={addOption}
                           className="px-3 py-2 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200">Adicionar</button>
                       </div>
@@ -612,7 +612,7 @@ export function BoutiqueMenu() {
 
                 {/* Dimensões */}
                 <section className="space-y-3">
-                  <h3 className="font-semibold text-gray-700 border-b pb-1">Dimensões (opcional)</h3>
+                  <h3 className="font-semibold text-[#D4AF37] border-b border-[#D4AF37]/20 pb-1">Dimensões (opcional)</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                       { key: 'width_cm', label: 'Largura (cm)' },
@@ -625,7 +625,7 @@ export function BoutiqueMenu() {
                         <input type="number" min="0" step="0.1"
                           value={(form as any)[key]}
                           onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                          className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                          className="w-full px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-sm text-white focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                       </div>
                     ))}
                   </div>
@@ -633,26 +633,26 @@ export function BoutiqueMenu() {
 
                 {/* Gestão de stock */}
                 <section className="space-y-3">
-                  <h3 className="font-semibold text-gray-700 border-b pb-1">Gestão de stock</h3>
+                  <h3 className="font-semibold text-[#D4AF37] border-b border-[#D4AF37]/20 pb-1">Gestão de stock</h3>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" id="track_stock" checked={form.track_stock}
                       onChange={e => setForm(f => ({ ...f, track_stock: e.target.checked }))}
-                      className="rounded border-gray-300 text-accent-500 focus:ring-accent-500" />
-                    <label htmlFor="track_stock" className="text-sm text-gray-700">Rastrear stock deste produto</label>
+                      className="rounded border-[#D4AF37]/40 text-[#D4AF37] focus:ring-[#D4AF37] bg-[#222222]" />
+                    <label htmlFor="track_stock" className="text-sm text-gray-300">Rastrear stock deste produto</label>
                   </div>
                   {form.track_stock && (
                     <div className="grid grid-cols-2 gap-4 pl-5">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Stock atual</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Stock atual</label>
                         <input type="number" min="0" value={form.stock}
                           onChange={e => setForm(f => ({ ...f, stock: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                          className="w-full px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-sm text-white focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Limite de alerta</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Limite de alerta</label>
                         <input type="number" min="0" value={form.stock_alert_threshold}
                           onChange={e => setForm(f => ({ ...f, stock_alert_threshold: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-accent-500 focus:outline-none" />
+                          className="w-full px-3 py-2 bg-[#222222] border border-[#D4AF37]/30 rounded-md text-sm text-white focus:ring-2 focus:ring-[#D4AF37] focus:outline-none" />
                         <p className="text-xs text-gray-400 mt-1">Alerta se stock ≤ este limite</p>
                       </div>
                     </div>
@@ -661,11 +661,11 @@ export function BoutiqueMenu() {
 
               </div>
 
-              <div className="border-t px-6 py-4 flex justify-end gap-3 bg-gray-50 rounded-b-lg">
+              <div className="border-t border-[#D4AF37]/20 px-6 py-4 flex justify-end gap-3 bg-[#111111] rounded-b-lg">
                 <button type="button" onClick={closeModal} disabled={isSaving}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50">Cancelar</button>
+                  className="px-4 py-2 text-gray-400 hover:text-white disabled:opacity-50">Cancelar</button>
                 <button type="submit" disabled={isSaving}
-                  className="px-6 py-2 bg-accent-500 text-white rounded-md hover:bg-accent-600 disabled:opacity-50">
+                  className="px-6 py-2 bg-[#D4AF37] text-black rounded-md hover:bg-[#B8941A] font-semibold disabled:opacity-50">
                   {isSaving ? 'A guardar…' : (editingProduct ? 'Guardar' : 'Adicionar')}
                 </button>
               </div>

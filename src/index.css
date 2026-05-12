@@ -11,6 +11,8 @@
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #111111;
+    color: #FFFFFF;
   }
 
   /* Améliorer les interactions tactiles */

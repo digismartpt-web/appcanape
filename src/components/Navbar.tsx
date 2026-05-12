@@ -40,7 +40,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
   const isClientOrPro = user?.role === 'client' || user?.role === 'pro';
 
   return (
-    <nav className="bg-primary-800 text-white sticky top-0 z-40 shadow-md">
+    <nav className="bg-[#D4AF37] text-black sticky top-0 z-40 shadow-md">
       <div className="w-full px-4">
         <div className="flex justify-between items-center h-14 sm:h-16">
           <Link to="/" className="flex items-center space-x-2">
@@ -51,7 +51,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                 className="h-7 w-7 sm:h-8 sm:w-8 object-contain"
               />
             ) : (
-              <Store className="h-7 w-7 sm:h-8 sm:w-8 text-accent-400" />
+              <Store className="h-7 w-7 sm:h-8 sm:w-8 text-black/70" />
             )}
             <span className="font-bold text-lg sm:text-xl truncate max-w-[150px] sm:max-w-none">{settings.name}</span>
           </Link>
@@ -59,31 +59,31 @@ export function Navbar({ onCartClick }: NavbarProps) {
           {/* Desktop & Tablet Menu */}
           <div className="hidden md:flex items-center space-x-2 lg:space-x-6">
             {/* Status Indicator Desktop */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full backdrop-blur-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10 rounded-full backdrop-blur-sm">
               <div className={`w-2 h-2 rounded-full ${canOrder ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
               <span className="text-xs font-medium">
                 {canOrder ? 'Aberto' : 'Fechado'}
               </span>
             </div>
 
-            <Link to="/menu" className="hover:text-accent-400 transition text-sm lg:text-base">Menu</Link>
+            <Link to="/menu" className="hover:text-black/60 transition text-sm lg:text-base">Menu</Link>
 
             {/* "Acesso Profissional" only for anonymous visitors */}
             {!user && (
-              <Link to="/acesso-profissional" className="hover:text-accent-400 transition text-sm lg:text-base whitespace-nowrap">
+              <Link to="/acesso-profissional" className="hover:text-black/60 transition text-sm lg:text-base whitespace-nowrap">
                 Acesso Profissional
               </Link>
             )}
 
             {user ? (
               <>
-                <Link to="/profile" className="hover:text-accent-400 transition flex items-center gap-1.5" title="Perfil">
+                <Link to="/profile" className="hover:text-black/60 transition flex items-center gap-1.5" title="Perfil">
                   <User className="h-5 w-5" />
                   {isPro && <ProBadge />}
                 </Link>
                 {isClientOrPro && (
                   <>
-                    <Link to="/mes-commandes" className="hover:text-accent-400 transition flex items-center space-x-1" title="As minhas encomendas">
+                    <Link to="/mes-commandes" className="hover:text-black/60 transition flex items-center space-x-1" title="As minhas encomendas">
                       <ShoppingBag className="h-5 w-5" />
                       <span className="hidden lg:inline text-sm lg:text-base">Encomendas</span>
                     </Link>
@@ -91,18 +91,18 @@ export function Navbar({ onCartClick }: NavbarProps) {
                   </>
                 )}
                 {user.role === 'admin' && (
-                  <Link to="/admin" className="hover:text-accent-400 transition text-sm lg:text-base">
+                  <Link to="/admin" className="hover:text-black/60 transition text-sm lg:text-base">
                     Admin
                   </Link>
                 )}
                 {user.role === 'boutique' && (
-                  <Link to="/boutique" className="hover:text-accent-400 transition text-sm lg:text-base">
+                  <Link to="/boutique" className="hover:text-black/60 transition text-sm lg:text-base">
                     Boutique
                   </Link>
                 )}
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center hover:text-accent-400 transition"
+                  className="flex items-center hover:text-black/60 transition"
                   title="Terminar sessão"
                 >
                   <LogOut className="h-5 w-5" />
@@ -110,7 +110,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                 </button>
               </>
             ) : (
-              <Link to="/auth" className="hover:text-accent-400 transition text-sm lg:text-base">Iniciar sessão</Link>
+              <Link to="/auth" className="hover:text-black/60 transition text-sm lg:text-base">Iniciar sessão</Link>
             )}
           </div>
 
@@ -130,7 +130,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
         {isOpen && (
           <div className="md:hidden pb-4">
             {/* Status Indicator Mobile */}
-            <div className="flex items-center gap-2 py-3 mb-2 px-3 bg-white/10 rounded-lg">
+            <div className="flex items-center gap-2 py-3 mb-2 px-3 bg-black/10 rounded-lg">
               <div className={`w-2.5 h-2.5 rounded-full ${canOrder ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
               <span className="text-sm font-medium">
                 {canOrder ? 'Aberto para encomendas' : 'Fechado'}
@@ -139,7 +139,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
 
             <Link
               to="/menu"
-              className="block py-2 hover:text-accent-400 transition"
+              className="block py-2 hover:text-black/60 transition"
               onClick={() => setIsOpen(false)}
             >
               Menu
@@ -149,7 +149,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
             {!user && (
               <Link
                 to="/acesso-profissional"
-                className="block py-2 hover:text-accent-400 transition"
+                className="block py-2 hover:text-black/60 transition"
                 onClick={() => setIsOpen(false)}
               >
                 Acesso Profissional
@@ -160,7 +160,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
               <>
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 py-2 hover:text-accent-400 transition"
+                  className="flex items-center gap-2 py-2 hover:text-black/60 transition"
                   onClick={() => setIsOpen(false)}
                 >
                   Perfil
@@ -170,7 +170,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                   <>
                     <Link
                       to="/mes-commandes"
-                      className="block py-2 hover:text-accent-400 transition"
+                      className="block py-2 hover:text-black/60 transition"
                       onClick={() => setIsOpen(false)}
                     >
                       As minhas encomendas
@@ -189,7 +189,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                 {user.role === 'admin' && (
                   <Link
                     to="/admin"
-                    className="block py-2 hover:text-accent-400 transition"
+                    className="block py-2 hover:text-black/60 transition"
                     onClick={() => setIsOpen(false)}
                   >
                     Admin
@@ -198,7 +198,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                 {user.role === 'boutique' && (
                   <Link
                     to="/boutique"
-                    className="block py-2 hover:text-accent-400 transition"
+                    className="block py-2 hover:text-black/60 transition"
                     onClick={() => setIsOpen(false)}
                   >
                     Boutique
@@ -209,7 +209,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
                     handleSignOut();
                     setIsOpen(false);
                   }}
-                  className="block w-full text-left py-2 hover:text-accent-400 transition"
+                  className="block w-full text-left py-2 hover:text-black/60 transition"
                 >
                   Terminar sessão
                 </button>
@@ -217,7 +217,7 @@ export function Navbar({ onCartClick }: NavbarProps) {
             ) : (
               <Link
                 to="/auth"
-                className="block py-2 hover:text-accent-400 transition"
+                className="block py-2 hover:text-black/60 transition"
                 onClick={() => setIsOpen(false)}
               >
                 Iniciar sessão

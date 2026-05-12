@@ -168,10 +168,18 @@ export function PedidoPro() {
           password: form.password,
           options: { data: { full_name: form.full_name.trim() } }
         });
-        console.log('[PedidoPro] STEP 1 resultado — user:', signUpData?.user?.id ?? null, '| identities:', signUpData?.user?.identities?.length ?? 'n/a', '| error:', signUpError?.message ?? null);
+        console.log('[PedidoPro] STEP 1 resultado — user:', signUpData?.user?.id ?? null, '| session:', signUpData?.session ? 'presente' : 'ausente (confirmação de email ativa?)', '| identities:', signUpData?.user?.identities?.length ?? 'n/a', '| error:', signUpError?.message ?? null);
         if (signUpError) throw new Error(signUpError.message);
         userId = signUpData.user?.id;
         if (!userId) throw new Error('Erro ao criar conta. Tente novamente.');
+
+        if (!signUpData.session) {
+          throw new Error(
+            'A confirmação de email está ativa no servidor. ' +
+            'Desative-a em Supabase → Authentication → Providers → Email → "Confirm email" OFF, ' +
+            'ou confirme o email recebido e submeta novamente o pedido após iniciar sessão.'
+          );
+        }
 
         const now = new Date().toISOString();
         console.log('[PedidoPro] STEP 2 — a inserir perfil users_canape para userId:', userId);
@@ -186,6 +194,7 @@ export function PedidoPro() {
             created_at: now
           });
         console.log('[PedidoPro] STEP 2 resultado — profileError:', profileError?.message ?? null);
+        if (profileError) throw new Error('Erro ao criar perfil de utilizador: ' + profileError.message);
 
         console.log('[PedidoPro] STEP 3 — a submeter pro_requests_canape para userId:', userId);
         const { error: proReqError } = await proFormClient

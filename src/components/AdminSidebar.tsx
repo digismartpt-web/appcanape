@@ -20,7 +20,7 @@ export function AdminSidebar() {
       {/* Burger Menu Button - All screens */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-20 left-4 z-50 bg-primary-800 text-white p-2 rounded-md shadow-lg"
+        className="fixed top-20 left-4 z-50 bg-[#1a1a1a] text-[#D4AF37] border border-[#D4AF37]/40 p-2 rounded-md shadow-lg hover:bg-[#D4AF37] hover:text-black transition-colors"
       >
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </button>
@@ -49,8 +49,8 @@ export function AdminSidebar() {
               className={cn(
                 'flex items-center space-x-2 p-3 rounded-md transition',
                 location.pathname === item.path
-                  ? 'bg-primary-600 text-white'
-                  : 'text-primary-100 hover:bg-primary-700 hover:text-white'
+                  ? 'bg-[#D4AF37] text-black font-semibold'
+                  : 'text-gray-300 hover:bg-[#D4AF37]/10 hover:text-[#D4AF37]'
               )}
             >
               <item.icon className="h-5 w-5" />
